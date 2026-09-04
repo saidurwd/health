@@ -91,6 +91,8 @@ class VisitorController extends Controller {
      * Manages all models.
      */
     public function actionAdmin() {
+        Yii::app()->db->createCommand('DELETE FROM {{visitor}} WHERE server_time < DATE_SUB(NOW(), INTERVAL 7 DAY)')->execute();
+
         $model = new Visitor('search');
         $model->unsetAttributes();  // clear any default values
         if (isset($_GET['Visitor']))
