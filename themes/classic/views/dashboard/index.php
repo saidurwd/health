@@ -361,7 +361,8 @@
         </select>
     </div>
     <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
-    <button class="btn btn-outline" onclick="exportDashboard()">Export</button>
+    <form id="exportForm" method="get" action="/index.php?r=dashboard/export" style="display:none;"></form>
+    <button class="btn btn-outline" onclick="document.getElementById('exportForm').submit();">Export</button>
 </div>
 
 <div class="dashboard-container">
@@ -855,7 +856,7 @@
     }
 
     function exportDashboard() {
-        alert('Dashboard export initiated. In production, this would download a PDF or Excel report.');
+        window.location.href = '<?php echo $this->createUrl('/dashboard/export'); ?>';
     }
 
     document.getElementById('currentDateTime').textContent = new Date().toLocaleString('en-US', {

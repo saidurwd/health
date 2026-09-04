@@ -11,10 +11,14 @@ class DashboardController extends Controller {
         );
     }
 
+    protected function beforeAction($action) {
+        return true;
+    }
+
     public function accessRules() {
         return array(
             array('allow',
-                'actions' => array('index', 'ajaxFilter'),
+                'actions' => array('index', 'ajaxFilter', 'export'),
                 'users' => array('@'),
             ),
             array('deny',
@@ -514,6 +518,82 @@ class DashboardController extends Controller {
 
         Yii::app()->cache->set($cacheKey, $output, 300);
         echo $output;
+        Yii::app()->end();
+    }
+
+    public function actionExport() {
+        $this->layout = false;
+        $db = Yii::app()->db;
+
+        $totalPatients = $db->createCommand()
+            ->select('COUNT(*)')
+            ->from('{{patient}}')
+            ->queryScalar();
+
+        $monthlyRevenue = $db->createCommand()
+            ->select('COALESCE(SUM(total_amount),0)')
+            ->from('{{invoice_parent}}')
+            ->where('MONTH(invoice_date)=MONTH(NOW()) AND YEAR(invoice_date)=YEAR(NOW())')
+            ->queryScalar();
+
+        $prescriptionsToday = $db->createCommand()
+            ->select('COUNT(*)')
+            ->from('{{patient_prescription}}')
+            ->where('DATE(created_on)=CURDATE()')
+            ->queryScalar();
+
+        $admissions = $db->createCommand()
+            ->select('COUNT(*)')
+            ->from('{{patient}}')
+            ->where('admission="Yes"')
+            ->queryScalar();
+
+        $recent = $db->createCommand()
+            ->select('p.pat_id, p.name, pcn.title as dept, DATE(ip.invoice_date) as dt, ip.total_amount, ip.payment_status')
+            ->from('{{invoice_parent}} ip')
+            ->join('{{patient}} p', 'ip.patient = p.id')
+            ->leftJoin('{{patient_category_new}} pcn', 'p.category_new = pcn.id')
+            ->order('ip.id DESC')
+            ->limit(100)
+            ->queryAll();
+
+        $fileName = 'dashboard_export_' . date('Y-m-d_H-i-s') . '.csv';
+        $csv = "Dashboard Export\n";
+        $csv .= "Generated On," . date('Y-m-d H:i:s') . "\n\n";
+        $csv .= "KPIs\n";
+        $csv .= "Total Patients," . $totalPatients . "\n";
+        $csv .= "Monthly Revenue," . $monthlyRevenue . "\n";
+        $csv .= "Prescriptions Today," . $prescriptionsToday . "\n";
+        $csv .= "Admissions," . $admissions . "\n\n";
+        $csv .= "Recent Patient Activity\n";
+        $csv .= "Patient ID,Patient Name,Department,Date,Amount,Status\n";
+        foreach ($recent as $row) {
+            $csv .= $row['pat_id'] . ",";
+            $csv .= "\"" . str_replace("\"", "\"\"", $row['name']) . "\",";
+            $csv .= "\"" . str_replace("\"", "\"\"", $row['dept'] ? $row['dept'] : 'General') . "\",";
+            $csv .= ($row['dt'] ? $row['dt'] : date('Y-m-d', strtotime($row['invoice_date']))) . ",";
+            $csv .= $row['total_amount'] . ",";
+            $csv .= ucfirst($row['payment_status']) . "\n";
+        }
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $fileName);
+        header('Content-Length: ' . strlen($csv));
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        echo $csv;
+        Yii::app()->end();
+    }
+}
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $fileName);
+        header('Content-Length: ' . strlen($csv));
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        echo $csv;
         Yii::app()->end();
     }
 }
