@@ -225,6 +225,67 @@ class DashboardController extends Controller {
             $diseases['values'][] = (int) $d['cnt'];
         }
 
+        $referralSources = array('labels' => array(), 'values' => array());
+        $refs = $db->createCommand()
+            ->select('referred, COUNT(*) as cnt')
+            ->from('{{patient}}')
+            ->where('referred IS NOT NULL AND referred != ""')
+            ->group('referred')
+            ->order('cnt DESC')
+            ->limit(8)
+            ->queryAll();
+        foreach ($refs as $ref) {
+            $referralSources['labels'][] = $ref['referred'];
+            $referralSources['values'][] = (int) $ref['cnt'];
+        }
+
+        $geographicData = array('labels' => array(), 'values' => array());
+        $geo = $db->createCommand()
+            ->select('d.title as district, COUNT(*) as cnt')
+            ->from('{{patient}} p')
+            ->join('{{district}} d', 'p.district = d.id')
+            ->group('p.district')
+            ->order('cnt DESC')
+            ->limit(8)
+            ->queryAll();
+        foreach ($geo as $g) {
+            $geographicData['labels'][] = $g['district'];
+            $geographicData['values'][] = (int) $g['cnt'];
+        }
+
+        $staffPerformance = array('labels' => array(), 'values' => array());
+        $staff = $db->createCommand()
+            ->select('u.full_name, COUNT(*) as invoices, SUM(ip.total_amount) as revenue')
+            ->from('{{invoice_parent}} ip')
+            ->join('{{user}} u', 'ip.invoice_by = u.id')
+            ->group('ip.invoice_by')
+            ->order('revenue DESC')
+            ->limit(8)
+            ->queryAll();
+        foreach ($staff as $s) {
+            $staffPerformance['labels'][] = $s['full_name'];
+            $staffPerformance['values'][] = (float) $s['revenue'];
+        }
+
+        $stockAlerts = array();
+        $stock = $db->createCommand()
+            ->select('st.title as store, p.title as product, ss.quantity, ss.rate')
+            ->from('{{stock_summary}} ss')
+            ->join('{{product}} p', 'ss.item = p.id')
+            ->join('{{store}} st', 'ss.store = st.id')
+            ->where('ss.quantity > 0')
+            ->order('ss.quantity ASC')
+            ->limit(10)
+            ->queryAll();
+        foreach ($stock as $row) {
+            $stockAlerts[] = array(
+                'store' => $row['store'],
+                'product' => $row['product'],
+                'quantity' => (float) $row['quantity'],
+                'rate' => (float) $row['rate'],
+            );
+        }
+
         $heatmap = array();
         for ($day = 0; $day < 7; $day++) {
             for ($hour = 8; $hour <= 19; $hour++) {
@@ -279,6 +340,10 @@ class DashboardController extends Controller {
             'serviceRevenue' => $serviceRevenue,
             'departments' => $departments,
             'diseases' => $diseases,
+            'referralSources' => $referralSources,
+            'geographicData' => $geographicData,
+            'staffPerformance' => $staffPerformance,
+            'stockAlerts' => $stockAlerts,
             'heatmap' => $heatmap,
             'recentActivity' => $recentActivity,
         );
@@ -462,6 +527,67 @@ class DashboardController extends Controller {
             $diseases['values'][] = (int) $d['cnt'];
         }
 
+        $referralSources = array('labels' => array(), 'values' => array());
+        $refs = $db->createCommand()
+            ->select('referred, COUNT(*) as cnt')
+            ->from('{{patient}}')
+            ->where('referred IS NOT NULL AND referred != ""')
+            ->group('referred')
+            ->order('cnt DESC')
+            ->limit(8)
+            ->queryAll();
+        foreach ($refs as $ref) {
+            $referralSources['labels'][] = $ref['referred'];
+            $referralSources['values'][] = (int) $ref['cnt'];
+        }
+
+        $geographicData = array('labels' => array(), 'values' => array());
+        $geo = $db->createCommand()
+            ->select('d.title as district, COUNT(*) as cnt')
+            ->from('{{patient}} p')
+            ->join('{{district}} d', 'p.district = d.id')
+            ->group('p.district')
+            ->order('cnt DESC')
+            ->limit(8)
+            ->queryAll();
+        foreach ($geo as $g) {
+            $geographicData['labels'][] = $g['district'];
+            $geographicData['values'][] = (int) $g['cnt'];
+        }
+
+        $staffPerformance = array('labels' => array(), 'values' => array());
+        $staff = $db->createCommand()
+            ->select('u.full_name, COUNT(*) as invoices, SUM(ip.total_amount) as revenue')
+            ->from('{{invoice_parent}} ip')
+            ->join('{{user}} u', 'ip.invoice_by = u.id')
+            ->group('ip.invoice_by')
+            ->order('revenue DESC')
+            ->limit(8)
+            ->queryAll();
+        foreach ($staff as $s) {
+            $staffPerformance['labels'][] = $s['full_name'];
+            $staffPerformance['values'][] = (float) $s['revenue'];
+        }
+
+        $stockAlerts = array();
+        $stock = $db->createCommand()
+            ->select('st.title as store, p.title as product, ss.quantity, ss.rate')
+            ->from('{{stock_summary}} ss')
+            ->join('{{product}} p', 'ss.item = p.id')
+            ->join('{{store}} st', 'ss.store = st.id')
+            ->where('ss.quantity > 0')
+            ->order('ss.quantity ASC')
+            ->limit(10)
+            ->queryAll();
+        foreach ($stock as $row) {
+            $stockAlerts[] = array(
+                'store' => $row['store'],
+                'product' => $row['product'],
+                'quantity' => (float) $row['quantity'],
+                'rate' => (float) $row['rate'],
+            );
+        }
+
         $heatmap = array();
         for ($day = 0; $day < 7; $day++) {
             for ($hour = 8; $hour <= 19; $hour++) {
@@ -512,6 +638,10 @@ class DashboardController extends Controller {
             'serviceRevenue' => $serviceRevenue,
             'departments' => $departments,
             'diseases' => $diseases,
+            'referralSources' => $referralSources,
+            'geographicData' => $geographicData,
+            'staffPerformance' => $staffPerformance,
+            'stockAlerts' => $stockAlerts,
             'heatmap' => $heatmap,
             'recentActivity' => $recentActivity,
         ));
@@ -575,17 +705,6 @@ class DashboardController extends Controller {
             $csv .= $row['total_amount'] . ",";
             $csv .= ucfirst($row['payment_status']) . "\n";
         }
-
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename=' . $fileName);
-        header('Content-Length: ' . strlen($csv));
-        header('Cache-Control: no-cache, no-store, must-revalidate');
-        header('Pragma: no-cache');
-        header('Expires: 0');
-        echo $csv;
-        Yii::app()->end();
-    }
-}
 
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename=' . $fileName);

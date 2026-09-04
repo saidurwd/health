@@ -547,6 +547,75 @@
             </table>
         </div>
     </div>
+
+    <div class="charts-grid">
+        <div class="chart-card third">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Referral Sources</div>
+                    <div class="chart-subtitle">Patient origin analysis</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="referralChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card third">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Geographic Distribution</div>
+                    <div class="chart-subtitle">Patients by district</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="geographicChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card third">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Staff Performance</div>
+                    <div class="chart-subtitle">Revenue by invoice_by</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="staffChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card full">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Stock Alerts</div>
+                    <div class="chart-subtitle">Low inventory items requiring attention</div>
+                </div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Store</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Rate (৳)</th>
+                        <th>Value (৳)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($stockAlerts as $row): ?>
+                        <tr>
+                            <td><?php echo CHtml::encode($row['store']); ?></td>
+                            <td><?php echo CHtml::encode($row['product']); ?></td>
+                            <td><?php echo $row['quantity']; ?></td>
+                            <td>৳<?php echo number_format($row['rate'], 2); ?></td>
+                            <td><strong>৳<?php echo number_format($row['quantity'] * $row['rate'], 2); ?></strong></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -581,6 +650,18 @@
         diseases: {
             labels: <?php echo json_encode($diseases['labels']); ?>,
             values: <?php echo json_encode($diseases['values']); ?>
+        },
+        referralSources: {
+            labels: <?php echo json_encode($referralSources['labels']); ?>,
+            values: <?php echo json_encode($referralSources['values']); ?>
+        },
+        geographicData: {
+            labels: <?php echo json_encode($geographicData['labels']); ?>,
+            values: <?php echo json_encode($geographicData['values']); ?>
+        },
+        staffPerformance: {
+            labels: <?php echo json_encode($staffPerformance['labels']); ?>,
+            values: <?php echo json_encode($staffPerformance['values']); ?>
         },
         heatmap: <?php echo json_encode($heatmap); ?>
     };
@@ -735,6 +816,63 @@
         });
     }
 
+    function initReferralChart() {
+        const ctx = document.getElementById('referralChart').getContext('2d');
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: sampleData.referralSources.labels,
+                datasets: [{ data: sampleData.referralSources.values, backgroundColor: colors, borderWidth: 3, borderColor: '#fff', hoverOffset: 8 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '65%',
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 10, boxWidth: 8, font: { size: 10 } } } }
+            }
+        });
+    }
+
+    function initGeographicChart() {
+        const ctx = document.getElementById('geographicChart').getContext('2d');
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sampleData.geographicData.labels,
+                datasets: [{
+                    label: 'Patients', data: sampleData.geographicData.values,
+                    backgroundColor: primaryColor + 'cc', borderColor: primaryColor,
+                    borderWidth: 2, borderRadius: 8, borderSkipped: false
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { grid: { color: '#f1f3f5' } }, y: { grid: { display: false } } }
+            }
+        });
+    }
+
+    function initStaffChart() {
+        const ctx = document.getElementById('staffChart').getContext('2d');
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sampleData.staffPerformance.labels,
+                datasets: [{
+                    label: 'Revenue (৳)', data: sampleData.staffPerformance.values,
+                    backgroundColor: accentColor + 'cc', borderColor: accentColor,
+                    borderWidth: 2, borderRadius: 8, borderSkipped: false
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { grid: { color: '#f1f3f5' }, ticks: { callback: v => '৳' + (v/1000) + 'k' } }, y: { grid: { display: false } } }
+            }
+        });
+    }
+
     function initHeatmap() {
         const container = document.getElementById('heatmapGrid');
         container.innerHTML = '';
@@ -825,6 +963,24 @@
             window.diseaseChart.update();
         }
 
+        if (window.referralChart) {
+            window.referralChart.data.labels = data.referralSources.labels;
+            window.referralChart.data.datasets[0].data = data.referralSources.values;
+            window.referralChart.update();
+        }
+
+        if (window.geographicChart) {
+            window.geographicChart.data.labels = data.geographicData.labels;
+            window.geographicChart.data.datasets[0].data = data.geographicData.values;
+            window.geographicChart.update();
+        }
+
+        if (window.staffChart) {
+            window.staffChart.data.labels = data.staffPerformance.labels;
+            window.staffChart.data.datasets[0].data = data.staffPerformance.values;
+            window.staffChart.update();
+        }
+
         if (window.heatmapData) {
             window.heatmapData = data.heatmap;
             initHeatmap();
@@ -869,6 +1025,9 @@
         window.serviceRevenueChart = initServiceRevenueChart();
         window.departmentChart = initDepartmentChart();
         window.diseaseChart = initDiseaseChart();
+        window.referralChart = initReferralChart();
+        window.geographicChart = initGeographicChart();
+        window.staffChart = initStaffChart();
         window.heatmapData = sampleData.heatmap;
         initHeatmap();
     });
