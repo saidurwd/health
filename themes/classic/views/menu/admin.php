@@ -1,0 +1,164 @@
+<?php
+/* @var $this MenuController */
+/* @var $model Menu */
+$this->pageTitle = 'Menus - ' . Yii::app()->name;
+$this->breadcrumbs = array(
+    'Menus' => array('admin'),
+    'Manage',
+);
+Yii::app()->clientScript->registerScript('reload-pageSetUp', "
+    function reloadPageSetUp() {
+        pageSetUp();
+    }
+    ", CClientScript::POS_END);
+?>
+<div class="row">
+    <div class="col-xs-12 col-sm-7 col-md-7 col-lg-4">
+        <h1 class="page-title txt-color-blueDark">
+            <i class="fa fa-home fa-fw "></i> 
+            Menus
+            <span>>
+                Manage
+            </span>
+        </h1>
+    </div>
+    <div class="col-xs-12 col-sm-5 col-md-5 col-lg-8">
+        <ul id="sparks" class="">
+            <li class="sparks-info">
+                <h5> </h5>
+            </li>
+        </ul>
+    </div>
+</div>
+<!-- widget grid -->
+<section id="widget-grid" class="">
+    <!-- row -->
+    <div class="row">
+        <!-- NEW WIDGET START -->
+        <article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+            <!-- Widget ID (each widget will need unique ID)-->
+            <div class="jarviswidget" id="wid-id-1" data-widget-editbutton="false">
+                <header>
+                    <span class="widget-icon"> <i class="fa fa-home"></i> </span>
+                    <h2>Menus</h2>       
+                    <div class="widget-toolbar">
+                        <?php echo CHtml::link('<i class="fa fa-plus"></i>', array('create'), array('data-toggle' => 'modal', 'data-target' => '#newData', 'class' => 'btn btn-sm btn-primary', 'data-placement' => 'bottom', 'rel' => 'tooltip', 'data-original-title' => 'New')); ?>
+                    </div>
+                </header>
+                <!-- widget div-->
+                <div>
+                    <!-- widget content -->
+                    <div class="widget-body no-padding">
+                        <?php
+                        $this->widget('zii.widgets.grid.CGridView', array(
+                            'id' => 'menu-grid',
+                            'dataProvider' => $model->search(),
+                            'filter' => $model,
+                            'afterAjaxUpdate' => 'reloadPageSetUp',
+                            'htmlOptions' => array('class' => ''),
+                            'itemsCssClass' => 'table table-bordered table-striped table-hover smart-form',
+                            'template' => '{items}{pager}',
+                            'emptyText' => 'No result found.',
+                            'summaryText' => "{start} - {end} of {count} result",
+                            'pager' => array(
+                                'htmlOptions' => array(
+                                    'class' => 'pagination',
+                                ),
+                                'header' => '',
+                                'selectedPageCssClass' => 'active',
+                            ),
+                            'pagerCssClass' => 'widget-footer',
+                            'columns' => array(
+                                array(
+                                    'name' => 'parent',
+                                    'type' => 'raw',
+                                    'value' => 'Menu::get_menu_title($data->parent)',
+                                    'filter' => false,
+                                    'htmlOptions' => array('style' => "text-align:left;", 'title' => 'Parent'),
+                                ),
+                                array(
+                                    'name' => 'title',
+                                    'type' => 'raw',
+                                    'value' => '$data->title',
+                                    'filter' => CHtml::activeTextField($model, 'title', array('class' => 'form-control')),
+                                    'htmlOptions' => array('style' => "text-align:left;", 'title' => 'Title'),
+                                ),
+                                array(
+                                    'name' => 'controller',
+                                    'type' => 'raw',
+                                    'value' => '$data->controller',
+                                    'filter' => CHtml::activeTextField($model, 'controller', array('class' => 'form-control')),
+                                    'htmlOptions' => array('style' => "text-align:left;", 'title' => 'Controller'),
+                                ),
+                                array(
+                                    'name' => 'url',
+                                    'type' => 'raw',
+                                    'value' => '$data->url',
+                                    'filter' => CHtml::activeTextField($model, 'url', array('class' => 'form-control')),
+                                    'htmlOptions' => array('style' => "text-align:left;", 'title' => 'URL'),
+                                ),
+                                array(
+                                    'name' => 'icon',
+                                    'type' => 'raw',
+                                    'value' => '$data->icon',
+                                    'filter' => CHtml::activeTextField($model, 'icon', array('class' => 'form-control')),
+                                    'htmlOptions' => array('style' => "text-align:left;", 'title' => 'Icon'),
+                                ),
+                                array(
+                                    'name' => 'ordering',
+                                    'type' => 'raw',
+                                    'value' => '$data->ordering',
+                                    'filter' => CHtml::activeTextField($model, 'ordering', array('class' => 'form-control')),
+                                    'htmlOptions' => array('style' => "text-align:center;", 'title' => 'Ordering'),
+                                ),
+                                array(
+                                    'name' => 'status',
+                                    'value' => '$data->status?Yii::t(\'app\',\'Active\'):Yii::t(\'app\', \'Inactive\')',
+                                    'filter' => CHtml::activeDropDownList($model, 'status', array('0' => 'Inactive', '1' => 'Active'), array('empty' => 'All', 'class' => 'form-control')),
+                                    'htmlOptions' => array('style' => "text-align:center;"),
+                                ),
+                                array(
+                                    'name' => 'group',
+                                    'type' => 'raw',
+                                    'value' => '$data->group',
+                                    'filter' => CHtml::activeTextField($model, 'group', array('class' => 'form-control')),
+                                    'htmlOptions' => array('style' => "text-align:center;", 'title' => 'Group'),
+                                ),
+                                array(
+                                    'header' => '',
+                                    'class' => 'CButtonColumn',
+                                    'htmlOptions' => array('style' => "text-align:center;width:80px;", 'class' => ''),
+                                    'template' => '{update} {delete}',
+                                    'buttons' => array(
+                                        'update' => array(
+                                            'label' => '',
+                                            'imageUrl' => '',
+                                            'options' => array('class' => 'btn btn-xs btn-info fa fa-pencil', 'data-toggle' => 'modal', 'data-target' => '#newData'),
+                                        ),
+                                        'view' => array(
+                                            'label' => '',
+                                            'imageUrl' => '',
+                                            'options' => array('class' => 'btn btn-xs btn-info fa fa-search', 'data-toggle' => 'modal', 'data-target' => '#newData'),
+                                        ),
+                                        'delete' => array(
+                                            'label' => '',
+                                            'imageUrl' => '',
+                                            'options' => array('class' => 'btn btn-xs btn-danger fa fa-times'),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ));
+                        ?>
+                    </div>
+                    <!-- end widget content -->
+                </div>
+                <!-- end widget div -->
+            </div>
+            <!-- end widget -->
+        </article>
+        <!-- WIDGET END -->
+    </div>
+    <!-- end row -->
+</section>
+<!-- end widget grid -->

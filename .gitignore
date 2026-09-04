@@ -1,0 +1,8 @@
+\.vs/health/v15/
+\.vs/
+\.idea/
+assets/
+.DS_Store
+framework/
+protected/runtime/application.log
+
