@@ -600,7 +600,7 @@
     let trendChart;
     function initTrendChart(data) {
         const ctx = document.getElementById('attendanceTrendChart').getContext('2d');
-        trendChart = new Chart(ctx, {
+        return new Chart(ctx, {
             type: 'line',
             data: {
                 labels: data.labels,
@@ -667,7 +667,7 @@
 
     function initDemographicsChart() {
         const ctx = document.getElementById('demographicsChart').getContext('2d');
-        new Chart(ctx, {
+        return new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: sampleData.demographics.labels,
@@ -682,7 +682,7 @@
 
     function initServiceRevenueChart() {
         const ctx = document.getElementById('serviceRevenueChart').getContext('2d');
-        new Chart(ctx, {
+        return new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: sampleData.serviceRevenue.labels,
@@ -702,7 +702,7 @@
 
     function initDepartmentChart() {
         const ctx = document.getElementById('departmentChart').getContext('2d');
-        new Chart(ctx, {
+        return new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: sampleData.departments.labels,
@@ -722,7 +722,7 @@
 
     function initDiseaseChart() {
         const ctx = document.getElementById('diseaseChart').getContext('2d');
-        new Chart(ctx, {
+        return new Chart(ctx, {
             type: 'pie',
             data: {
                 labels: sampleData.diseases.labels,
@@ -738,7 +738,8 @@
     function initHeatmap() {
         const container = document.getElementById('heatmapGrid');
         container.innerHTML = '';
-        sampleData.heatmap.forEach((level, i) => {
+        const heatmap = window.heatmapData || sampleData.heatmap;
+        heatmap.forEach((level, i) => {
             const cell = document.createElement('div');
             cell.className = 'heatmap-cell';
             cell.setAttribute('data-level', Math.min(level, 4));
@@ -751,11 +752,107 @@
     }
 
     function applyFilters() {
-        document.getElementById('kpiTotalPatients').textContent = (12000 + Math.floor(Math.random() * 1000)).toLocaleString();
-        document.getElementById('kpiRevenue').textContent = '৳' + (250000 + Math.floor(Math.random() * 80000)).toLocaleString();
-        document.getElementById('kpiPrescriptions').textContent = (300 + Math.floor(Math.random() * 100)).toLocaleString();
-        document.getElementById('kpiAdmissions').textContent = (80 + Math.floor(Math.random() * 20)).toLocaleString();
-        initHeatmap();
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const category = document.getElementById('categoryFilter').value;
+        const department = document.getElementById('departmentFilter').value;
+
+        const btn = document.querySelector('.btn-primary');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Loading...';
+        btn.disabled = true;
+
+        $.ajax({
+            url: '<?php echo $this->createUrl('/dashboard/ajaxFilter'); ?>',
+            type: 'POST',
+            data: {
+                start_date: startDate,
+                end_date: endDate,
+                category: category,
+                department: department
+            },
+            dataType: 'json',
+            success: function(data) {
+                updateDashboard(data);
+            },
+            error: function() {
+                alert('Failed to load filtered data. Please try again.');
+            },
+            complete: function() {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+    }
+
+    function updateDashboard(data) {
+        const primaryColor = '#3b5998';
+        const accentColor = '#00bcd4';
+
+        document.getElementById('kpiTotalPatients').textContent = Number(data.totalPatients).toLocaleString();
+        document.getElementById('kpiRevenue').textContent = '৳' + Number(data.monthlyRevenue).toLocaleString();
+        document.getElementById('kpiPrescriptions').textContent = Number(data.prescriptionsToday).toLocaleString();
+        document.getElementById('kpiAdmissions').textContent = Number(data.admissions).toLocaleString();
+
+        if (window.trendChart) {
+            window.trendChart.data.labels = data.trendWeek.labels;
+            window.trendChart.data.datasets[0].data = data.trendWeek.patients;
+            window.trendChart.data.datasets[1].data = data.trendWeek.revenue;
+            window.trendChart.update('active');
+        }
+
+        if (window.demographicsChart) {
+            window.demographicsChart.data.labels = data.demographics.labels;
+            window.demographicsChart.data.datasets[0].data = data.demographics.values;
+            window.demographicsChart.update();
+        }
+
+        if (window.serviceRevenueChart) {
+            window.serviceRevenueChart.data.labels = data.serviceRevenue.labels;
+            window.serviceRevenueChart.data.datasets[0].data = data.serviceRevenue.values;
+            window.serviceRevenueChart.update();
+        }
+
+        if (window.departmentChart) {
+            window.departmentChart.data.labels = data.departments.labels;
+            window.departmentChart.data.datasets[0].data = data.departments.values;
+            window.departmentChart.update();
+        }
+
+        if (window.diseaseChart) {
+            window.diseaseChart.data.labels = data.diseases.labels;
+            window.diseaseChart.data.datasets[0].data = data.diseases.values;
+            window.diseaseChart.update();
+        }
+
+        if (window.heatmapData) {
+            window.heatmapData = data.heatmap;
+            initHeatmap();
+        }
+
+        const tbody = document.getElementById('recentActivityTable');
+        if (tbody && data.recentActivity) {
+            tbody.innerHTML = data.recentActivity.map(row => {
+                const amount = parseFloat(row.amount).toFixed(2);
+                const progressColor = row.progress == 100 ? 'var(--success)' : (row.progress > 50 ? 'var(--warning)' : 'var(--danger)');
+                return '<tr>' +
+                    '<td><strong>' + escapeHtml(row.id) + '</strong></td>' +
+                    '<td>' + escapeHtml(row.name) + '</td>' +
+                    '<td>' + escapeHtml(row.dept) + '</td>' +
+                    '<td>' + escapeHtml(row.date) + '</td>' +
+                    '<td>' + escapeHtml(row.service) + '</td>' +
+                    '<td><strong>৳' + Number(amount).toLocaleString() + '</strong></td>' +
+                    '<td><span class="status-badge ' + row.status + '">' + row.status.charAt(0).toUpperCase() + row.status.slice(1) + '</span></td>' +
+                    '<td style="min-width: 120px;"><div class="progress-bar"><div class="progress-bar-fill" style="width: ' + row.progress + '%; background: ' + progressColor + '"></div></div></td>' +
+                '</tr>';
+            }).join('');
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     function exportDashboard() {
@@ -767,11 +864,12 @@
     });
 
     window.addEventListener('DOMContentLoaded', () => {
-        initTrendChart(sampleData.trendWeek);
-        initDemographicsChart();
-        initServiceRevenueChart();
-        initDepartmentChart();
-        initDiseaseChart();
+        window.trendChart = initTrendChart(sampleData.trendWeek);
+        window.demographicsChart = initDemographicsChart();
+        window.serviceRevenueChart = initServiceRevenueChart();
+        window.departmentChart = initDepartmentChart();
+        window.diseaseChart = initDiseaseChart();
+        window.heatmapData = sampleData.heatmap;
         initHeatmap();
     });
 </script>
