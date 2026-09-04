@@ -126,7 +126,7 @@ class SiteController extends Controller {
                 $audit->login_time = date("Y-m-d G:i:s");
                 $audit->save();
                 Yii::app()->user->setFlash('success', 'Welcome to the wonderful world of <strong>' . CHtml::encode(Yii::app()->name) . '</strong>. With advanced features you will definitely have a great experience of using <strong>' . CHtml::encode(Yii::app()->name) . '</strong>.');
-                $this->redirect(Yii::app()->user->returnUrl);
+                $this->redirect(array('/dashboard/index'));
             }
         }
         // display the login form

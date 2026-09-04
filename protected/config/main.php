@@ -7,6 +7,7 @@
 return array(
     'basePath' => dirname(__FILE__) . DIRECTORY_SEPARATOR . '..',
     'name' => 'Health Program Software',
+    'defaultController' => 'dashboard',
     //Default theme
     'theme' => 'classic',
     //Default time zone
@@ -70,7 +71,7 @@ return array(
             'timeout' => 3600,
         ),
         // uncomment the following to enable URLs in path-format
-        'urlManager' => array(
+        /*'urlManager' => array(
             'urlFormat' => 'path',
             'showScriptName' => false,
             'urlSuffix' => '.html',
@@ -81,7 +82,7 @@ return array(
                 '<controller:\w+>/<action:\w+>/<id:\d+>' => '<controller>/<action>',
                 '<controller:\w+>/<action:\w+>' => '<controller>/<action>',
             ),
-        ),
+        ),*/
         // database settings are configured in database.php
         'db' => require(dirname(__FILE__) . '/database.php'),
         'errorHandler' => array(
