@@ -7,7 +7,7 @@ return array(
     'connectionString' => 'mysql:host=localhost;dbname=health',
     'emulatePrepare' => true,
     'username' => 'root',
-    'password' => '',
+    'password' => 'root',
     'charset' => 'utf8',
     'tablePrefix' => 'os_'
 );
