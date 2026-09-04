@@ -416,9 +416,9 @@
                     <div class="chart-subtitle">Daily patient visits over time</div>
                 </div>
                 <div class="chart-actions">
-                    <button class="active" onclick="updateTrendChart('week')">Week</button>
-                    <button onclick="updateTrendChart('month')">Month</button>
-                    <button onclick="updateTrendChart('year')">Year</button>
+                    <button class="active" onclick="updateTrendChart('week', this)">Week</button>
+                    <button onclick="updateTrendChart('month', this)">Month</button>
+                    <button onclick="updateTrendChart('year', this)">Year</button>
                 </div>
             </div>
             <div class="chart-container tall">
@@ -597,7 +597,6 @@
     const accentColor = '#00bcd4';
     const colors = ['#3b5998', '#00bcd4', '#4caf50', '#ff9800', '#f44336', '#9c27b0', '#795548', '#607d8b'];
 
-    let trendChart;
     function initTrendChart(data) {
         const ctx = document.getElementById('attendanceTrendChart').getContext('2d');
         return new Chart(ctx, {
@@ -655,14 +654,14 @@
         });
     }
 
-    function updateTrendChart(period) {
+    function updateTrendChart(period, btn) {
         const data = sampleData['trend' + period.charAt(0).toUpperCase() + period.slice(1)];
-        trendChart.data.labels = data.labels;
-        trendChart.data.datasets[0].data = data.patients;
-        trendChart.data.datasets[1].data = data.revenue;
-        trendChart.update('active');
+        window.trendChart.data.labels = data.labels;
+        window.trendChart.data.datasets[0].data = data.patients;
+        window.trendChart.data.datasets[1].data = data.revenue;
+        window.trendChart.update('active');
         document.querySelectorAll('.chart-actions button').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
+        btn.classList.add('active');
     }
 
     function initDemographicsChart() {
