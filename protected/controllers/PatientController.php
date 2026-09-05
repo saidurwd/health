@@ -40,7 +40,7 @@ class PatientController extends Controller {
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
-                'actions' => array('admin', 'delete', 'create', 'update', 'view', 'card', 'newprescription', 'editprescription', 'remove', 'prescription', 'preblank', 'addmedicine', 'removemedicine', 'rehabilitation', 'registration'),
+                'actions' => array('admin', 'delete', 'create', 'update', 'view', 'card', 'newprescription', 'editprescription', 'remove', 'prescription', 'preblank', 'addmedicine', 'removemedicine', 'rehabilitation', 'registration', 'autocomplete'),
                 'users' => array('@'),
             ),
             array('allow', // allow admin user to perform 'admin' and 'delete' actions
@@ -374,6 +374,46 @@ class PatientController extends Controller {
             echo CActiveForm::validate($model);
             Yii::app()->end();
         }
+    }
+
+    public function actionAutocomplete() {
+        if (isset($_GET['id'])) {
+            $patient = Patient::model()->findByPk((int) $_GET['id']);
+            if ($patient) {
+                echo CJSON::encode(array(array(
+                    'id' => $patient->id,
+                    'text' => $patient->name . ' [' . $patient->pat_id . ']',
+                )));
+            } else {
+                echo CJSON::encode(array());
+            }
+            Yii::app()->end();
+        }
+
+        if (!isset($_GET['q'])) {
+            echo CJSON::encode(array());
+            Yii::app()->end();
+        }
+
+        $term = trim($_GET['q']);
+        $criteria = new CDbCriteria;
+        $criteria->select = 'id, CONCAT(name, " [", pat_id, "]") AS text';
+        $criteria->compare('name', $term, true, 'OR');
+        $criteria->compare('pat_id', $term, true, 'OR');
+        $criteria->order = 'name ASC';
+        $criteria->limit = 20;
+
+        $patients = Patient::model()->findAll($criteria);
+        $results = array();
+        foreach ($patients as $patient) {
+            $results[] = array(
+                'id' => $patient->id,
+                'text' => $patient->name . ' [' . $patient->pat_id . ']',
+            );
+        }
+
+        echo CJSON::encode($results);
+        Yii::app()->end();
     }
 
 }

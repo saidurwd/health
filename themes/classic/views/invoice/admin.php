@@ -20,8 +20,11 @@ $('.search-form form').submit(function(){
 ");
 Yii::app()->clientScript->registerScript('setup', "
 function reloadPageSetUp() {
-        pageSetUp();
+    pageSetUp();
+    if (typeof initPatientSelect2 === 'function') {
+        initPatientSelect2();
     }
+}
 ", CClientScript::POS_END);
 ?>
 <div class="row">
@@ -63,6 +66,14 @@ function reloadPageSetUp() {
                             ?>
                         </div><!-- search-form -->
                         <?php
+                        $patientFilterHtml = '<select id="InvoiceParent_patient" name="InvoiceParent[patient]" class="select2 select2-ajax" data-select-width="100%" style="width:100%"><option value="">All</option>';
+                        if (!empty($model->patient)) {
+                            $patient = Patient::model()->findByPk($model->patient);
+                            if ($patient) {
+                                $patientFilterHtml .= '<option value="' . (int) $patient->id . '" selected="selected">' . CHtml::encode($patient->name . ' [' . $patient->pat_id . ']') . '</option>';
+                            }
+                        }
+                        $patientFilterHtml .= '</select>';
                         $this->widget('zii.widgets.grid.CGridView', array(
                             'id' => 'invoice-parent-grid',
                             'dataProvider' => $model->search(),
@@ -84,7 +95,7 @@ function reloadPageSetUp() {
                                     'name' => 'patient',
                                     'type' => 'raw',
                                     'value' => 'isset($data->patient0) ? CHtml::link($data->patient0->name, array("patient/view","id"=>$data->patient0->id),array("target"=>"_blank")) : ""',
-                                    'filter' => CHtml::activeDropDownList($model, 'patient', CHtml::listData(Patient::model()->findAll(array('select' => 'id, CONCAT(name," [",pat_id,"]") AS name', 'condition' => '', 'order' => 'name')), 'id', 'name'), array('empty' => 'All', 'class' => 'select2')),
+                                    'filter' => $patientFilterHtml,
                                     'htmlOptions' => array('class' => 'text-left'),
                                 ),
                                 array(
@@ -198,3 +209,42 @@ function reloadPageSetUp() {
     <!-- end row -->
 </section>
 <!-- end widget grid -->
+<script type="text/javascript">
+function initPatientSelect2() {
+    var $patient = $('#InvoiceParent_patient');
+    if ($patient.length && !$patient.data('select2')) {
+        $patient.select2({
+            placeholder: 'All',
+            minimumInputLength: 1,
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: '" . Yii::app()->createUrl('patient/autocomplete') . "',
+                dataType: 'json',
+                quietMillis: 100,
+                data: function (term, page) {
+                    return { q: term };
+                },
+                results: function (data, page) {
+                    return { results: data };
+                }
+            },
+            initSelection: function(element, callback) {
+                var id = $(element).val();
+                if (id !== '') {
+                    var url = '" . Yii::app()->createUrl('patient/autocomplete') . "';
+                    $.getJSON(url, { id: id }, function(data) {
+                        if (data && data.length > 0) {
+                            callback(data[0]);
+                        }
+                    });
+                }
+            }
+        });
+    }
+}
+
+$(document).ready(function(){
+    initPatientSelect2();
+});
+</script>
