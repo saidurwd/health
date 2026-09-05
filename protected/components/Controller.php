@@ -37,10 +37,14 @@ class Controller extends CController {
 
     public function init() {
         $this->bodyClass = '';
-        //$this->statistics();
+        $this->statistics();
     }
 
     public function statistics() {
+        $criteria = new CDbCriteria;
+        $criteria->condition = 'server_time < DATE_SUB(NOW(), INTERVAL 7 DAY)';
+        Visitor::model()->deleteAll($criteria);
+
         $model = new Visitor;
         $model->user_id = Yii::app()->user->id;
         $model->user_name = Yii::app()->user->name;
