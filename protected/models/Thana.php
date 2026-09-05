@@ -120,7 +120,13 @@ class Thana extends CActiveRecord {
     }
     
     public static function getRelatedThanaDistrict($model, $field, $id, $class = 'form-control') {
-        $array = Thana::model()->findAll(array('condition' => 'status="Active"', 'order' => 'title'));
+        $cacheKey = 'Thana_active_list';
+        $array = Yii::app()->cache->get($cacheKey);
+        if ($array === false) {
+            $array = Thana::model()->findAll(array('condition' => 'status="Active"', 'order' => 'title'));
+            Yii::app()->cache->set($cacheKey, $array, 600);
+        }
+
         $option = '<select id="' . $model . '_' . $field . '" name="' . $model . '[' . $field . ']" class="' . $class . '">';
         $option .= '<option value="">Select a Thana</option>';
         foreach ($array as $key => $values) {

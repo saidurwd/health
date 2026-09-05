@@ -136,8 +136,7 @@ $('.search-form form').submit(function(){
                                 array(
                                     'name' => 'age',
                                     'type' => 'raw',
-                                    //'value' => '$data->age." ".$data->age_type',
-                                    'value' => 'Patient::getPatiantAge($data->id)',
+                                    'value' => '($data->birth_date && $data->birth_date != "0000-00-00") ? Patient::getAge($data->birth_date) : $data->age . " " . $data->age_type',
                                     'filter' => CHtml::activeTextField($model, 'age', array('class' => 'form-control')),
                                     'htmlOptions' => array('class' => ''),
                                 ),
@@ -165,7 +164,7 @@ $('.search-form form').submit(function(){
                                 array(
                                     'name' => 'address',
                                     'type' => 'raw',
-                                    'value' => 'Patient::getPatiantAddress($data->id)',
+                                    'value' => '$data->address . (isset($data->thana0) ? ", " . $data->thana0->title : "") . (isset($data->district0) ? ", " . $data->district0->title : "")',
                                     'filter' => CHtml::activeTextField($model, 'address', array('class' => 'form-control')),
                                     'htmlOptions' => array('class' => ''),
                                 ),

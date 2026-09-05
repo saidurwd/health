@@ -89,6 +89,8 @@ class Patient extends CActiveRecord {
         return array(
             'category0' => array(self::BELONGS_TO, 'PatientCategory', 'category'),
             'category_new0' => array(self::BELONGS_TO, 'PatientCategoryNew', 'category_new'),
+            'thana0' => array(self::BELONGS_TO, 'Thana', 'thana'),
+            'district0' => array(self::BELONGS_TO, 'District', 'district'),
         );
     }
 
@@ -192,9 +194,8 @@ class Patient extends CActiveRecord {
         $criteria->compare('earning_member', $this->earning_member, true);
         $criteria->compare('earning_source', $this->earning_source, true);
         $criteria->compare('admission', $this->admission, true);
-        $criteria->with = array('category0');
+        $criteria->with = array('category0', 'category_new0', 'thana0', 'district0');
         $criteria->compare('category0.title', $this->category, true);
-        $criteria->with = array('category_new0');
         $criteria->compare('category_new0.title', $this->category_new, true);
 
         return new CActiveDataProvider($this, array(
@@ -275,20 +276,11 @@ class Patient extends CActiveRecord {
     }
 
     public static function autoPatientNumber() { //PAT#2021-SEP-386
-        $criteria = new CDbCriteria;
-        $criteria->order = 'created_on DESC, id DESC';
-        $model = Patient::model()->find($criteria);
-        if (empty($model->pat_id)) {
-            $autoValue = 1;
-        } else {
-            $ex = explode('-', $model->pat_id);
-            $max = $ex[2];
-//            if (substr($ex[0], -4) == date('Y')) {
-            $autoValue = ((int) $max + 1);
-//            } else {
-//                $autoValue = 1;
-//            }
-        }
+        $maxId = Yii::app()->db->createCommand()
+            ->select('MAX(id)')
+            ->from('{{patient}}')
+            ->queryScalar();
+        $autoValue = $maxId ? ((int) $maxId + 1) : 1;
         return 'PAT#' . date('Y') . '-' . strtoupper(date('M')) . '-' . $autoValue;
     }
 

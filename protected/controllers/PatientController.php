@@ -157,6 +157,7 @@ class PatientController extends Controller {
             $model->created_by = Yii::app()->user->id;
             if ($model->save()) {
                 Yii::app()->user->setFlash('success', 'Data was saved successfully');
+                $this->clearPatientCache();
                 $this->redirect(array('admin'));
             }
         }
@@ -249,13 +250,14 @@ class PatientController extends Controller {
             }
             if ($model->save()) {
                 Yii::app()->user->setFlash('success', 'Data was saved successfully');
+                $this->clearPatientCache();
                 $this->redirect(array('admin'));
             }
         }
 
         $this->render('update', array(
             'model' => $model,
-        ));
+        )    );
     }
 
     /**
@@ -265,6 +267,7 @@ class PatientController extends Controller {
      */
     public function actionDelete($id) {
         $this->loadModel($id)->delete();
+        $this->clearPatientCache();
 
         // if AJAX request (triggered by deletion via admin grid view), we should not redirect the browser
         if (!isset($_GET['ajax']))
@@ -307,9 +310,19 @@ class PatientController extends Controller {
         if (isset($_GET['Patient']))
             $model->attributes = $_GET['Patient'];
 
-        $this->render('admin', array(
-            'model' => $model,
-        ));
+        $cacheKey = 'PatientAdmin_' . md5(serialize($model->attributes));
+        $cached = Yii::app()->cache->get($cacheKey);
+        if ($cached !== false && empty($model->attributes)) {
+            $this->render('admin', $cached);
+            return;
+        }
+
+        $data = array('model' => $model);
+        if (empty($model->attributes)) {
+            Yii::app()->cache->set($cacheKey, $data, 120);
+        }
+
+        $this->render('admin', $data);
     }
 
     /**
@@ -338,6 +351,11 @@ class PatientController extends Controller {
         if ($model === null)
             throw new CHttpException(404, 'The requested page does not exist.');
         return $model;
+    }
+
+    protected function clearPatientCache() {
+        Yii::app()->cache->delete('PatientAdmin_' . md5(''));
+        Yii::app()->cache->delete('PatientDropdowns');
     }
 
     /**

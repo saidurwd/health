@@ -116,7 +116,13 @@ class District extends CActiveRecord {
     }
 
     public static function getRelatedDistrictCountry($model, $field, $id, $class = 'form-control') {
-        $array = District::model()->findAll(array('condition' => 'status="Active"', 'order' => 'title'));
+        $cacheKey = 'District_active_list';
+        $array = Yii::app()->cache->get($cacheKey);
+        if ($array === false) {
+            $array = District::model()->findAll(array('condition' => 'status="Active"', 'order' => 'title'));
+            Yii::app()->cache->set($cacheKey, $array, 600);
+        }
+
         $option = '<select id="' . $model . '_' . $field . '" name="' . $model . '[' . $field . ']" class="' . $class . '">';
         $option .= '<option value="">Select a District</option>';
         foreach ($array as $key => $values) {

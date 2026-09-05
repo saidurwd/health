@@ -156,7 +156,13 @@ class PatientCategoryNew extends CActiveRecord {
     }
 
     public static function getPatientCategoryForm($model, $field, $id) {
-        $parent1 = PatientCategoryNew::model()->findAll(array('condition' => 'parent=0 OR parent IS NULL', "order" => "title"));
+        $cacheKey = 'PatientCategoryNew_parents';
+        $parent1 = Yii::app()->cache->get($cacheKey);
+        if ($parent1 === false) {
+            $parent1 = PatientCategoryNew::model()->findAll(array('condition' => 'parent=0 OR parent IS NULL', "order" => "title"));
+            Yii::app()->cache->set($cacheKey, $parent1, 600);
+        }
+
         $option = '<select id="' . $model . '_' . $field . '" name="' . $model . '[' . $field . ']" class="select2">';
         $option .= '<option value="">Select a Category</option>';
         foreach ($parent1 as $key => $values1) {
@@ -165,7 +171,12 @@ class PatientCategoryNew extends CActiveRecord {
             } else {
                 $option .= '<option value="' . $values1["id"] . '">' . $values1["title"] . '</option>';
             }
-            $parent2 = PatientCategoryNew::model()->findAll(array('condition' => 'parent=' . (int) $values1["id"], 'order' => 'title'));
+            $cacheKey2 = 'PatientCategoryNew_children_' . $values1["id"];
+            $parent2 = Yii::app()->cache->get($cacheKey2);
+            if ($parent2 === false) {
+                $parent2 = PatientCategoryNew::model()->findAll(array('condition' => 'parent=' . (int) $values1["id"], 'order' => 'title'));
+                Yii::app()->cache->set($cacheKey2, $parent2, 600);
+            }
             foreach ($parent2 as $key => $values2) {
                 if ($id == $values2["id"]) {
                     $option .= '<option selected="selected" value="' . $values2["id"] . '" class="text-success space-left-30">' . $values2["title"] . '</option>';
