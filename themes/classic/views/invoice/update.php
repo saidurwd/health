@@ -71,20 +71,19 @@ Yii::app()->clientScript->registerScript('chained', '
                                 array(
                                     'header' => 'Product/Service',
                                     'name' => 'item',
-                                    'value' => 'Product::getItemName($data->item).Service::getData($data->service,"title")',
+                                    'value' => '(empty($data->item0) ? "N/A" : $data->item0->title).(empty($data->service0) ? "" : $data->service0->title)',
                                     'htmlOptions' => array('style' => "text-align:left;"),
                                     'footer' => 'TOTAL',
                                     'footerHtmlOptions' => array('class' => 'text-left text-bold-cus'),
                                 ),
                                 array(
                                     'name' => 'store',
-                                    'value' => 'Store::get_store($data->store)',
+                                    'value' => '(empty($data->store0) ? "N/A" : $data->store0->title)',
                                     'htmlOptions' => array('style' => "text-align:left;"),
                                 ),
                                 array(
                                     'name' => 'batch',
-                                    //'value' => 'Batch::getBatch($data->batch)',
-                                    'value' => 'Batch::getData($data->batch,"title")',
+                                    'value' => '(empty($data->batch0) ? "N/A" : $data->batch0->title)',
                                     'htmlOptions' => array('style' => "text-align:left;"),
                                 ),
                                 array(
@@ -96,7 +95,7 @@ Yii::app()->clientScript->registerScript('chained', '
                                 array(
                                     'header' => 'Unit',
                                     'type' => 'raw',
-                                    'value' => 'Product::getItemUOM($data->item)',
+                                    'value' => '(empty($data->item0) || empty($data->item0->unit0) ? "N/A" : $data->item0->unit0->formal_name)',
                                     'htmlOptions' => array('class' => "text-center width-100"),
                                 ),
                                 array(
@@ -108,14 +107,14 @@ Yii::app()->clientScript->registerScript('chained', '
                                     'name' => 'discount',
                                     'value' => 'Product::number_format_currency($data->discount,2,Yii::app()->session->get(\'currency\'))',
                                     'htmlOptions' => array('style' => "text-align:right;width:100px;"),
-                                    'footer' => $model->getTotalFooter($model->searchInvoice(@$_REQUEST['id'])->getData(), 'discount'),
+                                    'footer' => Invoice::getTotalDiscount(@$_REQUEST['id']),
                                     'footerHtmlOptions' => array('class' => 'text-right text-bold-cus'),
                                 ),
                                 array(
                                     'name' => 'amount',
                                     'value' => 'Product::number_format_currency($data->amount,2,Yii::app()->session->get(\'currency\'))',
                                     'htmlOptions' => array('style' => "text-align:right;width:150px;"),
-                                    'footer' => $model->getTotalFooter($model->searchInvoice(@$_REQUEST['id'])->getData(), 'amount'),
+                                    'footer' => Invoice::getTotalAmount(@$_REQUEST['id']),
                                     'footerHtmlOptions' => array('class' => 'text-right text-bold-cus'),
                                 ),
                                 array(

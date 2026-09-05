@@ -86,13 +86,14 @@ class Invoice extends CActiveRecord {
     /**
      * @return array relational rules.
      */
-    public function relations() {
-        // NOTE: you may need to adjust the relation name and the related
-        // class name for the relations automatically generated below.
+    public function relations()
+    {
         return array(
             'item0' => array(self::BELONGS_TO, 'Product', 'item'),
             'store0' => array(self::BELONGS_TO, 'Store', 'store'),
             'parent0' => array(self::BELONGS_TO, 'InvoiceParent', 'parent'),
+            'batch0' => array(self::BELONGS_TO, 'Batch', 'batch'),
+            'service0' => array(self::BELONGS_TO, 'Service', 'service'),
         );
     }
 
@@ -159,10 +160,8 @@ class Invoice extends CActiveRecord {
     }
 
     public function searchInvoice($id) {
-        // @todo Please modify the following code to remove attributes that should not be searched.
-
         $criteria = new CDbCriteria;
-        $criteria->condition = 'parent=' . (int) $id;
+        $criteria->condition = 't.parent=' . (int) $id;
 
         $criteria->compare('id', $this->id);
         $criteria->compare('parent', $this->parent);
@@ -179,10 +178,17 @@ class Invoice extends CActiveRecord {
         $criteria->compare('created_by', $this->created_by);
         $criteria->compare('created_on', $this->created_on);
 
+        $criteria->with = array('item0', 'store0', 'batch0', 'service0');
+
         return new CActiveDataProvider($this, array(
             'criteria' => $criteria,
             'pagination' => array(
                 'pageSize' => Yii::app()->params['pageSize100'],
+            ),
+            'sort' => array(
+                'attributes' => array(
+                    '*',
+                ),
             ),
         ));
     }
