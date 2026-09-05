@@ -26,4 +26,8 @@ ALTER TABLE os_invoice ADD INDEX idx_batch (batch);
 -- Cache table column type fix (applied earlier)
 ALTER TABLE os_cache MODIFY COLUMN value LONGBLOB NULL;
 
+-- Performance indexes
+ALTER TABLE os_visitor ADD INDEX idx_server_time (server_time);
+ALTER TABLE os_invoice ADD INDEX idx_parent_created_on (parent, created_on);
+
 

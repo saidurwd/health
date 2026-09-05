@@ -420,7 +420,7 @@ class InvoiceController extends Controller {
         if (isset($_GET['InvoiceParent']))
             $model->attributes = $_GET['InvoiceParent'];
 
-        $cacheKey = 'InvoiceAdmin_' . md5(serialize($model->attributes));
+        $cacheKey = 'InvoiceAdmin_unfiltered';
         $cached = Yii::app()->cache->get($cacheKey);
         if ($cached !== false && empty($model->attributes)) {
             $this->render('admin', $cached);
@@ -475,7 +475,9 @@ class InvoiceController extends Controller {
     }
 
     protected function clearInvoiceCache() {
+        Yii::app()->cache->delete('InvoiceAdmin_unfiltered');
         Yii::app()->cache->delete('InvoiceAdmin_' . md5(''));
+        Yii::app()->cache->delete('InvoiceAdmin_' . md5(serialize(array())));
     }
 
 }
