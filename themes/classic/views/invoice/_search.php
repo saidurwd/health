@@ -18,16 +18,7 @@
 
 	<div class="row">
 		<?php echo $form->label($model,'patient'); ?>
-		<select id="search_InvoiceParent_patient" name="InvoiceParent[patient]" class="select2 select2-ajax" data-select-width="100%" style="width:100%">
-			<option value="">All</option>
-			<?php if (!empty($model->patient) || !empty($_GET['InvoiceParent']['patient'])): ?>
-				<?php $pid = !empty($model->patient) ? $model->patient : $_GET['InvoiceParent']['patient']; ?>
-				<?php $patient = Patient::model()->findByPk($pid); ?>
-				<?php if ($patient): ?>
-					<option value="<?php echo $patient->id; ?>" selected="selected"><?php echo CHtml::encode($patient->name . ' [' . $patient->pat_id . ']'); ?></option>
-				<?php endif; ?>
-			<?php endif; ?>
-		</select>
+		<?php echo $form->dropDownList($model,'patient', CHtml::listData(Patient::model()->findAll(array('select' => 'id, CONCAT(name," [",pat_id,"]") AS name', 'condition' => '', 'order' => 'name')), 'id', 'name'), array('empty' => 'All', 'class' => 'select2')); ?>
 	</div>
 
 	<div class="row">
@@ -56,45 +47,5 @@
 	</div>
 
 <?php $this->endWidget(); ?>
-
-<script type="text/javascript">
-function initSearchPatientSelect2() {
-    var $patient = $('#search_InvoiceParent_patient');
-    if ($patient.length && !$patient.data('select2')) {
-        $patient.select2({
-            placeholder: 'All',
-            minimumInputLength: 1,
-            allowClear: true,
-            width: '100%',
-            ajax: {
-                url: '" . Yii::app()->createUrl('patient/autocomplete') . "',
-                dataType: 'json',
-                quietMillis: 100,
-                data: function (term, page) {
-                    return { q: term };
-                },
-                results: function (data, page) {
-                    return { results: data };
-                }
-            },
-            initSelection: function(element, callback) {
-                var id = $(element).val();
-                if (id !== '') {
-                    var url = '" . Yii::app()->createUrl('patient/autocomplete') . "';
-                    $.getJSON(url, { id: id }, function(data) {
-                        if (data && data.length > 0) {
-                            callback(data[0]);
-                        }
-                    });
-                }
-            }
-        });
-    }
-}
-
-$(document).ready(function(){
-    initSearchPatientSelect2();
-});
-</script>
 
 </div><!-- search-form -->

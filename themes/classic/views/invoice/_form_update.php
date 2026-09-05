@@ -5,42 +5,7 @@
 ?>
 <?php
 Yii::app()->clientScript->registerScript('show_hide', "
-    function initPatientSelect2() {
-        var $patient = $('#InvoiceParent_patient');
-        if ($patient.length && !$patient.data('select2')) {
-            $patient.select2({
-                placeholder: 'Search Patient',
-                minimumInputLength: 1,
-                allowClear: true,
-                width: '100%',
-                ajax: {
-                    url: '" . Yii::app()->createUrl('patient/autocomplete') . "',
-                    dataType: 'json',
-                    quietMillis: 100,
-                    data: function (term, page) {
-                        return { q: term };
-                    },
-                    results: function (data, page) {
-                        return { results: data };
-                    }
-                },
-                initSelection: function(element, callback) {
-                    var id = $(element).val();
-                    if (id !== '') {
-                        var url = '" . Yii::app()->createUrl('patient/autocomplete') . "';
-                        $.getJSON(url, { id: id }, function(data) {
-                            if (data && data.length > 0) {
-                                callback(data[0]);
-                            }
-                        });
-                    }
-                }
-            });
-        }
-    }
-
     $(document).ready(function(){
-        initPatientSelect2();
         $('#divService').hide();
         $('#divDiscounttype').hide();
         $('#divDiscountamount').hide();
@@ -71,32 +36,6 @@ Yii::app()->clientScript->registerScript('show_hide', "
             } else {
                 $('#divRateStatus').hide();
                 $('#divNote').hide();
-            }
-        });
-        $('#InvoiceParent_patient').select2({
-            placeholder: 'Search Patient',
-            minimumInputLength: 1,
-            ajax: {
-                url: '" . Yii::app()->createUrl('patient/autocomplete') . "',
-                dataType: 'json',
-                quietMillis: 100,
-                data: function (term, page) {
-                    return { q: term };
-                },
-                results: function (data, page) {
-                    return { results: data };
-                }
-            },
-            initSelection: function(element, callback) {
-                var id = $(element).val();
-                if (id !== '') {
-                    var url = '" . Yii::app()->createUrl('patient/autocomplete') . "';
-                    $.getJSON(url, { id: id }, function(data) {
-                        if (data && data.length > 0) {
-                            callback(data[0]);
-                        }
-                    });
-                }
             }
         });
     });
@@ -204,15 +143,7 @@ $formParent = $this->beginWidget('CActiveForm', array(
         </section>
         <section class="col col-2">
             <label class="select">
-                <select id="InvoiceParent_patient" name="InvoiceParent[patient]" class="select2 select2-ajax" data-select-width="100%" style="width:100%">
-                    <option value="">Select a Patient</option>
-                    <?php if (!empty($modelParent->patient)): ?>
-                        <?php $patient = Patient::model()->findByPk($modelParent->patient); ?>
-                        <?php if ($patient): ?>
-                            <option value="<?php echo $patient->id; ?>" selected="selected"><?php echo CHtml::encode($patient->name . ' [' . $patient->pat_id . ']'); ?></option>
-                        <?php endif; ?>
-                    <?php endif; ?>
-                </select>
+                <?php echo $formParent->dropDownList($modelParent, 'patient', CHtml::listData(Patient::model()->findAll(array('select' => 'id, CONCAT(name," [",pat_id,"]") AS name', 'condition' => '', 'order' => 'id DESC')), 'id', 'name'), array('empty' => 'Select a Patient', 'class' => 'select2')); ?>
                 <?php echo $formParent->error($modelParent, 'patient'); ?>
             </label>
         </section>
