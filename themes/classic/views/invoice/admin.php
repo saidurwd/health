@@ -36,7 +36,7 @@ function reloadPageSetUp() {
     </div>
     <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6 text-right">
         <?php echo CHtml::link('<span class="btn-label"><i class="fa fa-plus"></i></span> NEW', array('create'), array('class' => 'btn btn-labeled btn-primary')); ?>
-        <?php echo CHtml::link('<span class="btn-label"><i class="fa fa-search"></i></span>Advanced Search', '#', array('class' => 'btn btn-labeled btn-success search-button')); ?>
+        <?php //echo CHtml::link('<span class="btn-label"><i class="fa fa-search"></i></span>Advanced Search', '#', array('class' => 'btn btn-labeled btn-success search-button')); ?>
     </div>
 </div>
 <!-- widget grid -->
@@ -57,9 +57,9 @@ function reloadPageSetUp() {
                     <div class="widget-body padding-bottom-5">
                         <div class="search-form" style="display:none">
                             <?php
-                            $this->renderPartial('_search', array(
-                                'model' => $model,
-                            ));
+                            // $this->renderPartial('_search', array(
+                            //     'model' => $model,
+                            // ));
                             ?>
                         </div><!-- search-form -->
                         <?php
