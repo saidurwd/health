@@ -366,14 +366,6 @@ class DashboardController extends Controller {
             Yii::app()->end();
         }
 
-        $patientCondition = '1=1';
-        if ($category != 'all') {
-            $patientCondition .= ' AND category_new=' . (int) $category;
-        }
-        if ($department != 'all') {
-            $patientCondition .= ' AND category_new IN (SELECT id FROM {{patient_category_new}} WHERE parent=' . (int) $department . ' OR id=' . (int) $department . ')';
-        }
-
         $totalPatients = $db->createCommand()
             ->select('COUNT(*)')
             ->from('{{patient}}')

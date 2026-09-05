@@ -86,9 +86,10 @@ return array(
         // database settings are configured in database.php
         'db' => require(dirname(__FILE__) . '/database.php'),
         'cache' => array(
-            'class' => 'CDbCache',
-            'connectionID' => 'db',
-            'cacheTableName' => 'os_cache',
+            'class' => 'CFileCache',
+            'cachePath' => dirname(__FILE__) . '/../runtime/cache',
+            'cachePathMode' => 0755,
+            'cacheFileSuffix' => '.cache',
         ),
         'errorHandler' => array(
             // use 'site/error' action to display errors

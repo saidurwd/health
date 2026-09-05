@@ -4,5 +4,4 @@
 assets/
 .DS_Store
 framework/
-protected/runtime/application.log
-
+protected/runtime/

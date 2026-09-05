@@ -72,7 +72,7 @@ class StockTransferParent extends CActiveRecord {
             'stockTransfers' => array(self::HAS_MANY, 'StockTransfer', 'parent'),
             'supplier0' => array(self::BELONGS_TO, 'Vendor', 'supplier'),
             'status0' => array(self::BELONGS_TO, 'TransectionStatus', 'status'),
-            'createdBy' => array(self::BELONGS_TO, 'Users', 'created_by'),
+            'createdBy' => array(self::BELONGS_TO, 'User', 'created_by'),
         );
     }
 

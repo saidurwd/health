@@ -83,8 +83,7 @@ function reloadPageSetUp() {
                                 array(
                                     'name' => 'patient',
                                     'type' => 'raw',
-                                    //                                    'value' => 'Patient::getData($data->patient,"name")',
-                                    'value' => 'CHtml::link(Patient::getData($data->patient,"name"), array("patient/view","id"=>$data->patient),array("target"=>"_blank"))',
+                                    'value' => 'isset($data->patient0) ? CHtml::link($data->patient0->name, array("patient/view","id"=>$data->patient0->id),array("target"=>"_blank")) : ""',
                                     'filter' => CHtml::activeDropDownList($model, 'patient', CHtml::listData(Patient::model()->findAll(array('select' => 'id, CONCAT(name," [",pat_id,"]") AS name', 'condition' => '', 'order' => 'name')), 'id', 'name'), array('empty' => 'All', 'class' => 'select2')),
                                     'htmlOptions' => array('class' => 'text-left'),
                                 ),
@@ -106,7 +105,7 @@ function reloadPageSetUp() {
                                 array(
                                     'type' => 'raw',
                                     'header' => "# of Items",
-                                    'value' => 'Invoice::getNumberOfItems($data->id)',
+                                    'value' => '$data->itemCount',
                                     'htmlOptions' => array('style' => "text-align:center;width:100px;"),
                                 ),
                                 array(
@@ -119,7 +118,7 @@ function reloadPageSetUp() {
                                 array(
                                     'name' => 'invoice_by',
                                     'type' => 'raw',
-                                    'value' => 'User::get_full_name($data->invoice_by)',
+                                    'value' => 'isset($data->invoiceBy) ? $data->invoiceBy->full_name : ""',
                                     'filter' => CHtml::activeDropDownList($model, 'invoice_by', CHtml::listData(User::model()->findAll(array('condition' => '', 'order' => 'full_name')), 'id', 'full_name'), array('empty' => 'All', 'class' => 'select2')),
                                     'htmlOptions' => array('style' => "text-align:left;width:200px;"),
                                 ),
@@ -133,7 +132,7 @@ function reloadPageSetUp() {
                                 array(
                                     'name' => 'status',
                                     'type' => 'raw',
-                                    'value' => 'TransectionStatus::getStatus($data->status,5)',
+                                    'value' => 'isset($data->status0) ? $data->status0->status_title : ""',
                                     'filter' => CHtml::activeDropDownList($model, 'status', CHtml::listData(TransectionStatus::model()->findAll(array('condition' => 'user_view=1 AND transection_type=5', "order" => "id")), 'status_id', 'status_title'), array('empty' => 'All', 'class' => 'select2')),
                                     'htmlOptions' => array('style' => "text-align:left;width:100px"),
                                 ),

@@ -76,7 +76,7 @@ class StockIssueParent extends CActiveRecord {
         return array(
             'stockIssues' => array(self::HAS_MANY, 'StockIssue', 'parent'),
             'status0' => array(self::BELONGS_TO, 'TransectionStatus', 'status'),
-            'createdBy' => array(self::BELONGS_TO, 'Users', 'created_by'),
+            'createdBy' => array(self::BELONGS_TO, 'User', 'created_by'),
         );
     }
 

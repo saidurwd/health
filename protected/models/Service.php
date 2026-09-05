@@ -160,12 +160,23 @@ class Service extends CActiveRecord
 
     public static function getServiceCategory($model, $field, $id)
     {
-        $parent1 = Service::model()->findAll(array('condition' => 'parent=0 OR parent IS NULL', 'order' => "ordering ASC, path ASC"));
+        $cacheKey = 'ServiceCategory_parents';
+        $parent1 = Yii::app()->cache->get($cacheKey);
+        if ($parent1 === false) {
+            $parent1 = Service::model()->findAll(array('condition' => 'parent=0 OR parent IS NULL', 'order' => "ordering ASC, path ASC"));
+            Yii::app()->cache->set($cacheKey, $parent1, 600);
+        }
+
         $option = '<select id="' . $model . '_' . $field . '" name="' . $model . '[' . $field . ']" class="select2">';
         $option .= '<option value="">Select a Service</option>';
         foreach ($parent1 as $key => $values1) {
             $option .= '<optgroup label="' . $values1["title"] . '">';
-            $parent2 = Service::model()->findAll(array('condition' => 'parent=' . (int)$values1["id"], 'order' => 'ordering ASC, path ASC'));
+            $cacheKey2 = 'ServiceCategory_children_' . $values1["id"];
+            $parent2 = Yii::app()->cache->get($cacheKey2);
+            if ($parent2 === false) {
+                $parent2 = Service::model()->findAll(array('condition' => 'parent=' . (int)$values1["id"], 'order' => 'ordering ASC, path ASC'));
+                Yii::app()->cache->set($cacheKey2, $parent2, 600);
+            }
             foreach ($parent2 as $key => $values2) {
                 if ($id == $values2["id"]) {
                     $option .= '<option selected="selected" value="' . $values2["id"] . '">' . $values2["title"] . '</option>';

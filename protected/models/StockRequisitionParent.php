@@ -73,7 +73,7 @@ class StockRequisitionParent extends CActiveRecord {
         // class name for the relations automatically generated below.
         return array(
             'stockRequisitions' => array(self::HAS_MANY, 'StockRequisition', 'parent'),
-            'createdBy' => array(self::BELONGS_TO, 'Users', 'created_by'),
+            'createdBy' => array(self::BELONGS_TO, 'User', 'created_by'),
         );
     }
 

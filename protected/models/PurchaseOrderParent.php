@@ -76,7 +76,7 @@ class PurchaseOrderParent extends CActiveRecord {
         return array(
             'purchaseOrders' => array(self::HAS_MANY, 'PurchaseOrder', 'parent'),
             'supplier0' => array(self::BELONGS_TO, 'Vendor', 'supplier'),
-            'createdBy' => array(self::BELONGS_TO, 'Users', 'created_by'),
+            'createdBy' => array(self::BELONGS_TO, 'User', 'created_by'),
             'status0' => array(self::BELONGS_TO, 'TransectionStatus', 'status'),
         );
     }

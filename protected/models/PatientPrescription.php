@@ -158,7 +158,13 @@ class PatientPrescription extends CActiveRecord {
     }
 
     public static function getPrescriptionList($model, $field, $id, $placeholder) {
-        $array = PatientPrescription::model()->findAll(array('condition' => '', 'order' => 'created_on DESC'));
+        $cacheKey = 'PatientPrescription_list';
+        $array = Yii::app()->cache->get($cacheKey);
+        if ($array === false) {
+            $array = PatientPrescription::model()->findAll(array('condition' => '', 'order' => 'created_on DESC'));
+            Yii::app()->cache->set($cacheKey, $array, 300);
+        }
+
         $return = '<select id="' . $model . '_' . $field . '" name="' . $model . '[' . $field . ']" class="select2">';
         $return .= '<option value="">' . $placeholder . '</option>';
         foreach ($array as $key => $value) {
@@ -166,7 +172,7 @@ class PatientPrescription extends CActiveRecord {
                 $return .= '<option selected="selected" value="' . $value["id"] . '" class="' . $value["patient"] . '">' . $value["pre_number"] . '</option>';
             } else {
                 $return .= '<option value="' . $value["id"] . '" class="' . $value["patient"] . '">' . $value["pre_number"] . '</option>';
-            }            
+            }
         }
         $return .= '</select>';
 

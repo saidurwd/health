@@ -226,13 +226,13 @@ class InvoiceController extends Controller {
 
             if ($modelParent->save()) {
                 Invoice::model()->updateAll(array('parent' => $modelParent->id), 'parent=0 AND created_by=' . (int) Yii::app()->user->id);
-                //get total amount
                 $total_amount = Invoice::getTotalAmount($modelParent->id);
                 $patient_category_new = Patient::getData($modelParent->patient, 'category_new');
                 $patient_category = Patient::getData($modelParent->patient, 'category');
                 InvoiceParent::model()->updateAll(array('total_amount' => $total_amount, 'patient_category_new' => $patient_category_new, 'patient_category' => $patient_category), 'id=' . (int) $modelParent->id);
 
                 Yii::app()->user->setFlash('success', 'Invoice was CREATED successfully.');
+                $this->clearInvoiceCache();
                 $this->redirect(array('update', 'id' => $modelParent->id));
             }
         }
@@ -278,6 +278,7 @@ class InvoiceController extends Controller {
                 }
 
                 Yii::app()->user->setFlash('success', 'Invoice was UPDATED successfully.');
+                $this->clearInvoiceCache();
                 $this->redirect(array('admin'));
             }
         }
@@ -392,6 +393,7 @@ class InvoiceController extends Controller {
          * reverse to the list that coming from LoadSR
          */
         $this->loadModel($id)->delete();
+        $this->clearInvoiceCache();
 
         // if AJAX request (triggered by deletion via admin grid view), we should not redirect the browser
         if (!isset($_GET['ajax']))
@@ -418,13 +420,24 @@ class InvoiceController extends Controller {
         if (isset($_GET['InvoiceParent']))
             $model->attributes = $_GET['InvoiceParent'];
 
-        $this->render('admin', array(
-            'model' => $model,
-        ));
+        $cacheKey = 'InvoiceAdmin_' . md5(serialize($model->attributes));
+        $cached = Yii::app()->cache->get($cacheKey);
+        if ($cached !== false && empty($model->attributes)) {
+            $this->render('admin', $cached);
+            return;
+        }
+
+        $data = array('model' => $model);
+        if (empty($model->attributes)) {
+            Yii::app()->cache->set($cacheKey, $data, 120);
+        }
+
+        $this->render('admin', $data);
     }
 
     public function actionRemove($id) {
         InvoiceParent::model()->updateAll(array('status' => 2), 'id=' . (int) $id);
+        $this->clearInvoiceCache();
         Yii::app()->user->setFlash('success', 'Invoice was deleted successfully.');
         $this->redirect(array('admin'));
     }
@@ -459,6 +472,10 @@ class InvoiceController extends Controller {
             echo CActiveForm::validate($model);
             Yii::app()->end();
         }
+    }
+
+    protected function clearInvoiceCache() {
+        Yii::app()->cache->delete('InvoiceAdmin_' . md5(''));
     }
 
 }

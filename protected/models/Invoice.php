@@ -202,26 +202,27 @@ class Invoice extends CActiveRecord {
      */
 
     public static function getNumberOfItems($id) {
-        $value = Invoice::model()->findAll(array('condition' => 'parent=' . (int) $id));
-        return count($value);
+        return Yii::app()->db->createCommand()
+            ->select('COUNT(*)')
+            ->from('{{invoice}}')
+            ->where('parent=' . (int) $id)
+            ->queryScalar();
     }
 
     public static function getTotalAmount($parent) {
-        $getAmount = Yii::app()->db->createCommand()
-                ->select('ROUND((SUM(amount)),6)')
-                ->from('{{invoice}}')
-                ->where('parent=' . (int) $parent)
-                ->queryScalar();
-        return $getAmount;
+        return Yii::app()->db->createCommand()
+            ->select('ROUND(SUM(amount),6)')
+            ->from('{{invoice}}')
+            ->where('parent=' . (int) $parent)
+            ->queryScalar();
     }
 
     public static function getTotalDiscount($parent) {
-        $getAmount = Yii::app()->db->createCommand()
-                ->select('ROUND((SUM(discount)),6)')
-                ->from('{{invoice}}')
-                ->where('parent=' . (int) $parent)
-                ->queryScalar();
-        return $getAmount;
+        return Yii::app()->db->createCommand()
+            ->select('ROUND(SUM(discount),6)')
+            ->from('{{invoice}}')
+            ->where('parent=' . (int) $parent)
+            ->queryScalar();
     }
 
     public function getTotalFooter($records, $colName) {

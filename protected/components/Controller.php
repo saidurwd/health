@@ -37,7 +37,7 @@ class Controller extends CController {
 
     public function init() {
         $this->bodyClass = '';
-        $this->statistics();
+        //$this->statistics();
     }
 
     public function statistics() {

@@ -157,7 +157,6 @@ class PatientController extends Controller {
             $model->created_by = Yii::app()->user->id;
             if ($model->save()) {
                 Yii::app()->user->setFlash('success', 'Data was saved successfully');
-                $this->clearPatientCache();
                 $this->redirect(array('admin'));
             }
         }
@@ -212,7 +211,8 @@ class PatientController extends Controller {
             $model->attributes = $_POST['PatientPrescription'];
             if ($model->save()) {
                 Yii::app()->user->setFlash('success', 'Data was saved successfully');
-                $this->redirect(array('view', 'id' => $model->patient));
+                $this->clearPatientCache();
+                $this->redirect(array('admin'));
             }
         }
 
