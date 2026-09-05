@@ -2,21 +2,14 @@
 
 class BackupController extends Controller
 {
-
-    /**
-     * @var string the default layout for the views. Defaults to '//layouts/column2', meaning
-     * using two-column layout. See 'protected/views/layouts/column2.php'.
-     */
     public $layout = '//layouts/column2';
+    const RETENTION_DAYS = 30;
 
-    /**
-     * @return array action filters
-     */
     public function filters()
     {
         return array(
-            'accessControl', // perform access control for CRUD operations
-            'postOnly + delete', // we only allow deletion via POST request
+            'accessControl',
+            'postOnly + delete',
         );
     }
 
@@ -31,210 +24,264 @@ class BackupController extends Controller
         }
     }
 
-    /**
-     * Specifies the access control rules.
-     * This method is used by the 'accessControl' filter.
-     * @return array access control rules
-     */
     public function accessRules()
     {
         return array(
-            array(
-                'allow', // allow all users to perform 'index' and 'view' actions
-                'actions' => array('*'),
-                'users' => array('*'),
-            ),
-            array(
-                'allow', // allow authenticated user to perform 'create' and 'update' actions
-                'actions' => array('create', 'admin', 'delete', 'download','exportdatabase'),
-                'users' => array('@'),
-            ),
-            array(
-                'allow', // allow admin user to perform 'admin' and 'delete' actions
-                'actions' => array('admin', 'delete'),
-                'users' => array('admin'),
-            ),
-            array(
-                'deny', // deny all users
-                'users' => array('*'),
-            ),
+            array('allow', 'actions' => array('*'), 'users' => array('*')),
+            array('allow', 'actions' => array('admin', 'create', 'delete', 'download', 'exportdatabase', 'restore', 'cleanup'), 'users' => array('@')),
+            array('allow', 'actions' => array('admin', 'delete', 'restore', 'cleanup'), 'users' => array('admin')),
+            array('deny', 'users' => array('*')),
         );
+    }
+
+    public function actionAdmin()
+    {
+        $model = new Backup('search');
+        $model->unsetAttributes();
+        if (isset($_GET['Backup']))
+            $model->attributes = $_GET['Backup'];
+
+        $criteria = new CDbCriteria;
+        if ($model->id) {
+            $criteria->compare('t.id', $model->id);
+        }
+        if ($model->attachment) {
+            $criteria->compare('t.attachment', $model->attachment, true);
+        }
+        if ($model->created_on) {
+            $criteria->compare('t.created_on', $model->created_on, true);
+        }
+        if ($model->created_by) {
+            $criteria->compare('t.created_by', $model->created_by);
+        }
+        $criteria->order = 't.created_on DESC, t.id DESC';
+
+        $rawData = Backup::model()->findAll($criteria);
+        $dataProvider = new CArrayDataProvider($rawData, array(
+            'pagination' => array('pageSize' => Yii::app()->params['pageSize']),
+            'sort' => array('defaultOrder' => 'created_on DESC, id DESC')
+        ));
+
+        $this->render('admin', array(
+            'model' => $model,
+            'dataProvider' => $dataProvider,
+            'stats' => $this->getBackupStats(),
+        ));
+    }
+
+    public function actionCreate($type = 'gzip')
+    {
+        set_time_limit(0);
+        $startTime = microtime(true);
+
+        try {
+            $engine = new BackupEngine;
+            $engine->setBackupPath(Yii::app()->basePath . '/../uploads/backups');
+
+            $backup = $engine->createBackup($type);
+
+            $duration = round(microtime(true) - $startTime, 2);
+
+            Yii::app()->user->setFlash('success',
+                'Database backed up successfully! ' .
+                $backup->tables_count . ' tables exported in ' . $duration . 's. ' .
+                'File: ' . Backup::formatBytes($backup->file_size)
+            );
+        } catch (Exception $e) {
+            Yii::app()->user->setFlash('error', 'Backup failed: ' . $e->getMessage());
+        }
+
+        $this->redirect(array('admin'));
+    }
+
+    public function actionExportdatabase($type = 'gzip')
+    {
+        return $this->actionCreate($type);
+    }
+
+    public function actionRestore($id)
+    {
+        $model = $this->loadModel($id);
+        $filePath = Yii::app()->basePath . '/../uploads/backups/' . $model->attachment;
+
+        if (!is_file($filePath) || !file_exists($filePath)) {
+            Yii::app()->user->setFlash('error', "Backup file not found: " . $model->attachment);
+            $this->redirect(array('admin'));
+        }
+
+        if ($model->status !== Backup::STATUS_SUCCESS) {
+            Yii::app()->user->setFlash('error', "Cannot restore from a failed backup.");
+            $this->redirect(array('admin'));
+        }
+
+        $startTime = microtime(true);
+
+        try {
+            if ($model->type === Backup::TYPE_GZIP) {
+                $sqlContent = gzdecode(file_get_contents($filePath));
+            } elseif ($model->type === Backup::TYPE_ZIP) {
+                $zip = new ZipArchive();
+                $zip->open($filePath);
+                $sqlFileName = $this->getSqlFileNameFromZip($zip);
+                $sqlContent = $zip->getFromIndex($zip->locateName($sqlFileName));
+                $zip->close();
+            } else {
+                $sqlContent = file_get_contents($filePath);
+            }
+
+            if (empty($sqlContent)) {
+                throw new Exception('Backup file is empty or corrupted.');
+            }
+
+            $statements = $this->parseSqlStatements($sqlContent);
+
+            $connection = Yii::app()->db;
+            $connection->createCommand('SET FOREIGN_KEY_CHECKS = 0;')->execute();
+
+            foreach ($statements as $statement) {
+                if (!empty($statement)) {
+                    $connection->createCommand($statement)->execute();
+                }
+            }
+
+            $connection->createCommand('SET FOREIGN_KEY_CHECKS = 1;')->execute();
+
+            $duration = round(microtime(true) - $startTime, 2);
+
+            Yii::app()->user->setFlash('success',
+                'Database restored successfully in ' . $duration . 's. ' .
+                count($statements) . ' statements executed.'
+            );
+        } catch (Exception $e) {
+            Yii::app()->user->setFlash('error', 'Restore failed: ' . $e->getMessage());
+        }
+
+        $this->redirect(array('admin'));
+    }
+
+    public function actionCleanup($days = null)
+    {
+        $days = $days ? (int) $days : self::RETENTION_DAYS;
+        $deleted = Backup::cleanOldBackups($days);
+
+        Yii::app()->user->setFlash('success',
+            'Cleanup completed. ' . $deleted . ' backup(s) older than ' . $days . ' days were deleted.'
+        );
+        $this->redirect(array('admin'));
     }
 
     public function actionDownload($id)
     {
-        $this->render(
-            'download',
-            array(
-                'model' => $this->loadModel($id),
-            )
-        );
+        $model = $this->loadModel($id);
+        $filePath = Yii::app()->basePath . '/../uploads/backups/' . $model->attachment;
+
+        if (empty($model->attachment) || !is_file($filePath) || !file_exists($filePath)) {
+            Yii::app()->user->setFlash('error', "The file <strong>" . $model->attachment . "</strong> does not exist");
+            $this->redirect(array('admin'));
+        }
+
+        $content = file_get_contents($filePath);
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($model->attachment) . '"');
+        header('Content-Transfer-Encoding: binary');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($filePath));
+        ob_clean();
+        flush();
+        echo $content;
+        exit;
     }
 
-    public function actionExportdatabase()
-    {
-        set_time_limit(0);
-        $path = Yii::app()->basePath . '/../uploads/backups';
-        preg_match("/dbname=([^;]*)/", Yii::app()->db->connectionString, $dbnames);
-        preg_match("/host=([^;]*)/", Yii::app()->db->connectionString, $hosts);
-
-        // Database configuration
-        $host = $hosts[1];
-        $username = Yii::app()->db->username;
-        $password = Yii::app()->db->password;
-        $database_name = $dbnames[1];
-
-        // Get connection object and set the charset
-        $conn = mysqli_connect($host, $username, $password, $database_name);
-        $conn->set_charset("utf8");
-
-
-        // Get All Table Names From the Database
-        $tables = array();
-        $sql = "SHOW TABLES";
-        $result = mysqli_query($conn, $sql);
-
-        while ($row = mysqli_fetch_row($result)) {
-            $tables[] = $row[0];
-        }
-
-        $sqlScript = "SET foreign_key_checks = 0;";
-
-        foreach ($tables as $table) {
-            // Prepare SQLscript for creating table structure
-            $query = "SHOW CREATE TABLE $table";
-            $result = mysqli_query($conn, $query);
-            $row = mysqli_fetch_row($result);
-
-            $sqlScript .= "\n\n" . $row[1] . ";\n\n";
-
-
-            $query = "SELECT * FROM $table";
-            $result = mysqli_query($conn, $query);
-
-            $columnCount = mysqli_num_fields($result);
-
-            // Prepare SQLscript for dumping data for each table
-            for ($i = 0; $i < $columnCount; $i ++) {
-                while ($row = mysqli_fetch_row($result)) {
-                    $sqlScript .= "INSERT INTO $table VALUES(";
-                    for ($j = 0; $j < $columnCount; $j ++) {
-                        if (isset($row[$j])) {
-                            $sqlScript .= "'" . addslashes($row[$j]) . "'";
-                        } else {
-                            $sqlScript .= "''";
-                        }
-                        if ($j < ($columnCount - 1)) {
-                            $sqlScript .= ',';
-                        }
-                    }
-                    $sqlScript .= ");\n";
-                }
-            }
-
-            $sqlScript .= "\n";
-        }
-        $sqlScript .= "SET foreign_key_checks = 1;";
-
-        if(!empty($sqlScript))
-        {
-            // Save the SQL script to a backup file
-            $filename = $database_name . '_backup_' . time() . '.sql';
-            $backup_file_name = $path.'/'.$filename;
-            // Save .sql data
-            $model = new Backup;
-            $model->attachment = $filename;
-            $model->created_by = Yii::app()->user->id;
-            $model->created_on = new CDbExpression('NOW()');
-            $model->save();
-
-            //return $backup_file_name;
-            $fileHandler = fopen($backup_file_name, 'w+');
-            $number_of_lines = fwrite($fileHandler, $sqlScript);
-            fclose($fileHandler);
-
-            $zip = new ZipArchive();
-            $zipFileName = $database_name . '_backup_' . time() . '.zip';
-
-            // Save zip data
-            $model = new Backup;
-            $model->attachment = $zipFileName;
-            $model->created_by = Yii::app()->user->id;
-            $model->created_on = new CDbExpression('NOW()');
-            $model->save();
-
-            $zip->open($path. '/' . $zipFileName, ZipArchive::CREATE);
-            $zip->addFile($backup_file_name, $database_name . '_backup_' . time() . '.sql');
-            $zip->close();
-        }
-        //return $zipFileName;
-        Yii::app()->user->setFlash('success', 'Database was backed up successfully!');
-        $this->redirect(array('admin'));
-    }
-
-    /**
-     * Backup Database.
-     */
-    public function actionCreate()
-    {
-        set_time_limit(0);
-        $model = new Backup;
-        $path = Yii::app()->basePath . '/../uploads/backups';
-        if (!is_dir($path)) {
-            mkdir($path, 0777, true);
-        }
-        $filename = time() . '.sql';
-        Helpers::backupDatabase($path . '/' . $filename);
-        $model->attachment = $filename;
-        $model->created_by = Yii::app()->user->id;
-        $model->created_on = new CDbExpression('NOW()');
-        $model->save();
-        Yii::app()->user->setFlash('success', 'Database was backed up successfully!');
-        $this->redirect(array('admin'));
-    }
-
-    /**
-     * Deletes a particular model.
-     * If deletion is successful, the browser will be redirected to the 'admin' page.
-     * @param integer $id the ID of the model to be deleted
-     */
     public function actionDelete($id)
     {
         $model = Backup::model()->findByPk($id);
-        unlink(Yii::app()->basePath."/../uploads/backups/".$model->attachment);
+        if ($model) {
+            $filePath = Yii::app()->basePath . '/../uploads/backups/' . $model->attachment;
+            if (is_file($filePath) && file_exists($filePath)) {
+                @unlink($filePath);
+            }
+        }
 
         $this->loadModel($id)->delete();
 
-        // if AJAX request (triggered by deletion via admin grid view), we should not redirect the browser
         if (!isset($_GET['ajax']))
             $this->redirect(isset($_POST['returnUrl']) ? $_POST['returnUrl'] : array('admin'));
     }
 
-    /**
-     * Manages all models.
-     */
-    public function actionAdmin()
+    private function getBackupStats()
     {
-        $model = new Backup('search');
-        $model->unsetAttributes();  // clear any default values
-        if (isset($_GET['Backup']))
-            $model->attributes = $_GET['Backup'];
-
-        $this->render(
-            'admin',
-            array(
-                'model' => $model,
-            )
+        $stats = array(
+            'total_backups' => 0,
+            'total_size' => 0,
+            'last_backup' => null,
+            'success_count' => 0,
+            'failed_count' => 0,
         );
+
+        $stats['total_backups'] = (int) Yii::app()->db->createCommand('SELECT COUNT(*) FROM {{backup}}')->queryScalar();
+        $stats['total_size'] = (int) Yii::app()->db->createCommand('SELECT IFNULL(SUM(file_size),0) FROM {{backup}}')->queryScalar();
+        $stats['last_backup'] = Yii::app()->db->createCommand('SELECT MAX(created_on) FROM {{backup}}')->queryScalar();
+        $stats['success_count'] = (int) Yii::app()->db->createCommand('SELECT COUNT(*) FROM {{backup}} WHERE status=:status')->bindValue(':status', Backup::STATUS_SUCCESS)->queryScalar();
+        $stats['failed_count'] = (int) Yii::app()->db->createCommand('SELECT COUNT(*) FROM {{backup}} WHERE status=:status')->bindValue(':status', Backup::STATUS_FAILED)->queryScalar();
+
+        return $stats;
     }
 
-    /**
-     * Returns the data model based on the primary key given in the GET variable.
-     * If the data model is not found, an HTTP exception will be raised.
-     * @param integer $id the ID of the model to be loaded
-     * @return Backup the loaded model
-     * @throws CHttpException
-     */
+    private function getSqlFileNameFromZip(ZipArchive $zip)
+    {
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            if (preg_match('/\.sql$/i', $name)) {
+                return $name;
+            }
+        }
+        throw new Exception('No SQL file found inside ZIP archive.');
+    }
+
+    private function parseSqlStatements($sqlContent)
+    {
+        $statements = array();
+        $current = '';
+        $inString = false;
+        $stringChar = '';
+        $length = strlen($sqlContent);
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $sqlContent[$i];
+
+            if ($inString) {
+                $current .= $char;
+                if ($char === $stringChar && ($i === 0 || $sqlContent[$i - 1] !== '\\')) {
+                    $inString = false;
+                }
+            } else {
+                if ($char === "'" || $char === '"') {
+                    $inString = true;
+                    $stringChar = $char;
+                    $current .= $char;
+                } elseif ($char === ';') {
+                    $statement = trim($current);
+                    if (!empty($statement)) {
+                        $statements[] = $statement;
+                    }
+                    $current = '';
+                } else {
+                    $current .= $char;
+                }
+            }
+        }
+
+        $remaining = trim($current);
+        if (!empty($remaining)) {
+            $statements[] = $remaining;
+        }
+
+        return $statements;
+    }
+
     public function loadModel($id)
     {
         $model = Backup::model()->findByPk($id);
@@ -243,10 +290,6 @@ class BackupController extends Controller
         return $model;
     }
 
-    /**
-     * Performs the AJAX validation.
-     * @param Backup $model the model to be validated
-     */
     protected function performAjaxValidation($model)
     {
         if (isset($_POST['ajax']) && $_POST['ajax'] === 'backup-form') {
@@ -254,5 +297,4 @@ class BackupController extends Controller
             Yii::app()->end();
         }
     }
-
 }

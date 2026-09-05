@@ -74,4 +74,14 @@ ALTER TABLE os_invoice_parent ADD INDEX idx_patient_status_date (patient, status
 ALTER TABLE os_purchase_receive ADD INDEX idx_item_store_batch (item, store, batch);
 ALTER TABLE os_purchase_receive_parent ADD INDEX idx_status_id (status, id);
 
+-- Backup table enhancements for professional backup system
+ALTER TABLE os_backup ADD COLUMN file_path VARCHAR(500) NULL AFTER attachment;
+ALTER TABLE os_backup ADD COLUMN file_size BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER file_path;
+ALTER TABLE os_backup ADD COLUMN checksum VARCHAR(32) NULL AFTER file_size;
+ALTER TABLE os_backup ADD COLUMN type VARCHAR(20) NOT NULL DEFAULT 'gzip' AFTER checksum;
+ALTER TABLE os_backup ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'success' AFTER type;
+ALTER TABLE os_backup ADD COLUMN duration VARCHAR(50) NULL AFTER status;
+ALTER TABLE os_backup ADD COLUMN tables_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER duration;
+ALTER TABLE os_backup MODIFY COLUMN attachment VARCHAR(250) NOT NULL;
+
 
