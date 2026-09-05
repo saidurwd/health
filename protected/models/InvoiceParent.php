@@ -210,10 +210,15 @@ class InvoiceParent extends CActiveRecord
     public static function generateInvoiceNumber()
     {
         $year = date('Y');
-        $maxId = Yii::app()->db->createCommand()
-            ->select('MAX(id)')
-            ->from('{{invoice_parent}}')
-            ->queryScalar();
+        $cacheKey = 'InvoiceParent_max_id';
+        $maxId = Yii::app()->cache->get($cacheKey);
+        if ($maxId === false) {
+            $maxId = Yii::app()->db->createCommand()
+                ->select('MAX(id)')
+                ->from('{{invoice_parent}}')
+                ->queryScalar();
+            Yii::app()->cache->set($cacheKey, $maxId, 60);
+        }
         $autoValue = $maxId ? ((int) $maxId + 1) : 1;
 
         $return = 'INV#' . strtoupper(Yii::app()->user->name) . '-' . $year . '-' . $autoValue;

@@ -129,6 +129,9 @@ class StockSummary extends CActiveRecord {
             $model->amount = round(($model->quantity * $rate), 2);
             $model->save();
         }
+
+        Yii::app()->cache->delete('StockRequisition_StoreList');
+        Yii::app()->cache->delete('StockRequisition_BatchList');
     }
 
     /*
@@ -153,6 +156,9 @@ class StockSummary extends CActiveRecord {
             $model->amount = round(($model->quantity * $model->rate), 2);
             $model->save();
         }
+
+        Yii::app()->cache->delete('StockRequisition_StoreList');
+        Yii::app()->cache->delete('StockRequisition_BatchList');
     }
 
     public static function getAvailableItem($store, $item) {

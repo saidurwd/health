@@ -305,6 +305,12 @@ class StockRequisition extends CActiveRecord {
     }
 
     public static function getItemList($model, $field) {
+        $cacheKey = 'StockRequisition_ItemList';
+        $cached = Yii::app()->cache->get($cacheKey);
+        if ($cached !== false) {
+            return $cached;
+        }
+
         $array = Product::model()->findAll(array('condition' => '', 'order' => 'title'));
         $option = '<select id="' . $model . '_' . $field . '" name="' . $model . '[' . $field . ']" class="select2">';
         $option .= '<option value="">Select a Product</option>';
@@ -314,6 +320,7 @@ class StockRequisition extends CActiveRecord {
         }
         $option .= '</select>';
 
+        Yii::app()->cache->set($cacheKey, $option, 600);
         return $option;
     }
 
@@ -334,6 +341,12 @@ class StockRequisition extends CActiveRecord {
     }
 
     public static function getStoreList($model, $field, $placeholder) {
+        $cacheKey = 'StockRequisition_StoreList';
+        $cached = Yii::app()->cache->get($cacheKey);
+        if ($cached !== false) {
+            return $cached;
+        }
+
         $array = StockSummary::model()->findAll(array('select' => 'store, item, SUM(quantity) AS quantity', 'condition' => '', 'group' => 'item, store'));
         $return = '<select id="' . $model . '_' . $field . '" name="' . $model . '[' . $field . ']" class="select2">';
         $return .= '<option value="">' . $placeholder . '</option>';
@@ -343,6 +356,7 @@ class StockRequisition extends CActiveRecord {
         }
         $return .= '</select>';
 
+        Yii::app()->cache->set($cacheKey, $return, 300);
         return $return;
     }
 
@@ -370,6 +384,12 @@ class StockRequisition extends CActiveRecord {
     }
 
     public static function getBatchList($model, $field) {
+        $cacheKey = 'StockRequisition_BatchList';
+        $cached = Yii::app()->cache->get($cacheKey);
+        if ($cached !== false) {
+            return $cached;
+        }
+
         $array = StockSummary::model()->findAll(array('condition' => 'quantity>0'));
         $return = '<select id="' . $model . '_' . $field . '" name="' . $model . '[' . $field . ']" class="">'; //select2
         $return .= '<option value="">Select a Batch</option>';
@@ -383,6 +403,7 @@ class StockRequisition extends CActiveRecord {
         }
         $return .= '</select>';
 
+        Yii::app()->cache->set($cacheKey, $return, 300);
         return $return;
     }
 

@@ -67,4 +67,11 @@ ALTER TABLE os_user ADD UNIQUE KEY uk_username (username);
 ALTER TABLE os_user ADD UNIQUE KEY uk_email (email);
 ALTER TABLE os_invoice_parent ADD UNIQUE KEY uk_invoice_number (invoice_number);
 
+-- Additional performance indexes for invoice optimization
+ALTER TABLE os_invoice ADD INDEX idx_parent_created_by (parent, created_by);
+ALTER TABLE os_stock_summary ADD INDEX idx_store_item_batch_qty (store, item, batch, quantity);
+ALTER TABLE os_invoice_parent ADD INDEX idx_patient_status_date (patient, status, invoice_date DESC);
+ALTER TABLE os_purchase_receive ADD INDEX idx_item_store_batch (item, store, batch);
+ALTER TABLE os_purchase_receive_parent ADD INDEX idx_status_id (status, id);
+
 

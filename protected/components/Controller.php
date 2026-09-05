@@ -26,18 +26,27 @@ class Controller extends CController {
     public $breadcrumbs = array();
 
     public function checkAccess($controller, $action) {
+        $cacheKey = 'Acl_' . Yii::app()->user->id . '_' . $controller . '_' . $action;
+        $val = Yii::app()->cache->get($cacheKey);
+        if ($val !== false) {
+            return $val;
+        }
+
         $val = Acl::model()->findByAttributes(array('controller' => $controller, 'actions' => $action, 'group_id' => Yii::app()->user->group));
         if (!isset($val->access)) {
             $val = 1;
         } else {
             $val = $val->access;
         }
+
+        Yii::app()->cache->set($cacheKey, $val, 3600);
         return $val;
     }
 
     public function init() {
         $this->bodyClass = '';
-        $this->statistics();
+        // statistics moved to background cron job
+        // $this->statistics();
     }
 
     public function statistics() {

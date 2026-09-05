@@ -1,11 +1,9 @@
 <?php
-/* @var $this InvoiceController */
-/* @var $model Invoice */
-
+$invoiceParent = InvoiceParent::model()->findByPk((int)@$_REQUEST['id']);
 $this->pageTitle = 'Edit Invoice';
 $this->breadcrumbs = array(
     'Invoices' => array('admin'),
-    InvoiceParent::getData(@$_REQUEST['id'], "invoice_number") => array('view', 'id' => @$_REQUEST['id']),
+    $invoiceParent->invoice_number => array('view', 'id' => @$_REQUEST['id']),
     'Update',
 );
 Yii::app()->clientScript->registerScript('reload-script', "
@@ -24,7 +22,7 @@ Yii::app()->clientScript->registerScript('chained', '
         <h1 class="page-title txt-color-blueDark">
             <i class="fa fa-shopping-cart fa-fw "></i> 
             Invoices
-            <span>>
+            <span>
                 Edit Invoice
             </span>
         </h1>
@@ -45,7 +43,7 @@ Yii::app()->clientScript->registerScript('chained', '
             <div class="jarviswidget" id="wid-id-0" data-widget-editbutton="false" data-widget-colorbutton="false">
                 <header>
                     <span class="widget-icon"> <i class="fa fa-home"></i> </span>
-                    <h2><strong>Invoice#: </strong><?php echo InvoiceParent::getData(@$_REQUEST['id'], "invoice_number"); ?>, <strong>Invoice Date: </strong><?php echo User::get_date_time(InvoiceParent::getData(@$_REQUEST['id'], "invoice_date")); ?>, <strong>Invoice By: </strong><?php echo User::get_full_name(InvoiceParent::getData(@$_REQUEST['id'], "invoice_by")); ?></h2>
+                    <h2><strong>Invoice#: </strong><?php echo $invoiceParent->invoice_number; ?>, <strong>Invoice Date: </strong><?php echo User::get_date_time($invoiceParent->invoice_date); ?>, <strong>Invoice By: </strong><?php echo User::get_full_name($invoiceParent->invoice_by); ?></h2>
                 </header>
                 <!-- widget div-->
                 <div>

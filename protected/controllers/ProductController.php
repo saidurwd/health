@@ -79,6 +79,7 @@ class ProductController extends Controller {
             $model->created_by = Yii::app()->user->id;
             $model->created_on = date("Y-m-d G:i:s");
             if ($model->save()) {
+                Yii::app()->cache->delete('StockRequisition_ItemList');
                 Yii::app()->user->setFlash('success', 'Data was saved successfully');
                 $this->redirect(array('admin'));
             }
@@ -103,6 +104,7 @@ class ProductController extends Controller {
         if (isset($_POST['Product'])) {
             $model->attributes = $_POST['Product'];
             if ($model->save()) {
+                Yii::app()->cache->delete('StockRequisition_ItemList');
                 Yii::app()->user->setFlash('success', 'Data was saved successfully');
                 $this->redirect(array('admin'));
             }

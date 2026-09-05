@@ -356,6 +356,7 @@ class PatientController extends Controller {
     protected function clearPatientCache() {
         Yii::app()->cache->delete('PatientAdmin_' . md5(''));
         Yii::app()->cache->delete('PatientDropdowns');
+        Yii::app()->cache->delete('PatientList_dropdown');
     }
 
     /**

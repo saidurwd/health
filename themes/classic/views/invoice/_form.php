@@ -131,20 +131,20 @@ $form = $this->beginWidget('CActiveForm', array(
             array(
                 'header' => 'Product/Service',
                 'name' => 'item',
-                'value' => 'Product::getItemName($data->item).Service::getData($data->service,"title")',
+                'value' => '(empty($data->item0) ? "N/A" : $data->item0->title).(empty($data->service0) ? "" : $data->service0->title)',
                 'htmlOptions' => array('style' => "text-align:left;"),
                 'footer' => 'TOTAL',
                 'footerHtmlOptions' => array('class' => 'text-left text-bold-cus'),
             ),
             array(
                 'name' => 'store',
-                'value' => 'Store::get_store($data->store)',
+                'value' => '(empty($data->store0) ? "N/A" : $data->store0->title)',
                 'htmlOptions' => array('style' => "text-align:left;"),
             ),
             array(
                 'name' => 'batch',
                 'header' => 'Expiry',
-                'value' => 'Batch::getData($data->batch,"title")',
+                'value' => '(empty($data->batch0) ? "N/A" : $data->batch0->title)',
                 'htmlOptions' => array('style' => "text-align:left;"),
             ),
             array(
@@ -156,7 +156,7 @@ $form = $this->beginWidget('CActiveForm', array(
             array(
                 'header' => 'Unit',
                 'type' => 'raw',
-                'value' => 'Product::getItemUOM($data->item)',
+                'value' => '(empty($data->item0) || empty($data->item0->unit0) ? "N/A" : $data->item0->unit0->formal_name)',
                 'htmlOptions' => array('class' => "text-center width-100"),
             ),
             array(
@@ -169,14 +169,14 @@ $form = $this->beginWidget('CActiveForm', array(
                 'name' => 'discount',
                 'value' => 'Product::number_format_currency($data->discount,2,Yii::app()->session->get(\'currency\'))',
                 'htmlOptions' => array('style' => "text-align:right;width:100px;"),
-                'footer' => $modelGrid->getTotalFooter($modelGrid->search()->getData(), 'discount'),
+                'footer' => isset($totalDiscount) ? $totalDiscount : '',
                 'footerHtmlOptions' => array('class' => 'text-right text-bold-cus'),
             ),
             array(
                 'name' => 'amount',
                 'value' => 'Product::number_format_currency($data->amount,2,Yii::app()->session->get(\'currency\'))',
                 'htmlOptions' => array('style' => "text-align:right;width:150px;"),
-                'footer' => $modelGrid->getTotalFooter($modelGrid->search()->getData(), 'amount'),
+                'footer' => isset($totalAmount) ? $totalAmount : '',
                 'footerHtmlOptions' => array('class' => 'text-right text-bold-cus'),
             ),
             array(
@@ -221,7 +221,15 @@ $formParent = $this->beginWidget('CActiveForm', array(
                     <section class="col col-3">
                         <label class="select">
                             <?php echo $formParent->labelEx($modelParent, 'patient'); ?>
-                            <?php echo $formParent->dropDownList($modelParent, 'patient', CHtml::listData(Patient::model()->findAll(array('select' => 'id, CONCAT(name," [",pat_id,"]") AS name', 'condition' => '', 'order' => 'id DESC')), 'id', 'name'), array('empty' => 'Select a Patient', 'class' => 'select2')); ?>
+                            <?php
+                            $cacheKey = 'PatientList_dropdown';
+                            $patientList = Yii::app()->cache->get($cacheKey);
+                            if ($patientList === false) {
+                                $patientList = CHtml::listData(Patient::model()->findAll(array('select' => 'id, CONCAT(name," [",pat_id,"]") AS name', 'condition' => '', 'order' => 'id DESC')), 'id', 'name');
+                                Yii::app()->cache->set($cacheKey, $patientList, 600);
+                            }
+                            echo $formParent->dropDownList($modelParent, 'patient', $patientList, array('empty' => 'Select a Patient', 'class' => 'select2'));
+                            ?>
                             <?php echo $formParent->error($modelParent, 'patient'); ?>
                         </label>
                     </section>
@@ -318,7 +326,6 @@ $formParent = $this->beginWidget('CActiveForm', array(
                 url: "<?php print $this->createUrl('invoice/adjustment'); ?>",
                 data: "id=" + id + "&adjustment=" + adjustment + "&type=" + type,
                 cache: false,
-                async: false,
                 success: function (result) {
                     $('#invoice-grid').yiiGridView('update');
                 },

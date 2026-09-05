@@ -134,7 +134,7 @@ class Invoice extends CActiveRecord {
         // @todo Please modify the following code to remove attributes that should not be searched.
 
         $criteria = new CDbCriteria;
-        $criteria->condition = 'parent=0 AND created_by=' . (int) Yii::app()->user->id;
+        $criteria->condition = 't.parent=0 AND t.created_by=' . (int) Yii::app()->user->id;
 
         $criteria->compare('id', $this->id);
         $criteria->compare('parent', $this->parent);
@@ -150,6 +150,13 @@ class Invoice extends CActiveRecord {
         $criteria->compare('note', $this->note, true);
         $criteria->compare('created_by', $this->created_by);
         $criteria->compare('created_on', $this->created_on);
+
+        $criteria->with = array(
+            'item0' => array('with' => 'unit0'),
+            'store0',
+            'batch0',
+            'service0',
+        );
 
         return new CActiveDataProvider($this, array(
             'criteria' => $criteria,
@@ -178,7 +185,12 @@ class Invoice extends CActiveRecord {
         $criteria->compare('created_by', $this->created_by);
         $criteria->compare('created_on', $this->created_on);
 
-        $criteria->with = array('item0', 'store0', 'batch0', 'service0');
+        $criteria->with = array(
+            'item0' => array('with' => 'unit0'),
+            'store0',
+            'batch0',
+            'service0',
+        );
 
         return new CActiveDataProvider($this, array(
             'criteria' => $criteria,

@@ -133,7 +133,12 @@ class InvoiceController extends Controller {
             $rate_status = Service::getData($model->service, 'rate_status');
             if ($model->servicetype == 'Medicine') {
                 $model->service = NULL;
-                $model->rate = StockRequisition::genarateItemRate($model->item, $model->store, $model->batch);
+                $rateCacheKey = 'ItemRate_' . $model->item . '_' . $model->store . '_' . $model->batch;
+                $model->rate = Yii::app()->cache->get($rateCacheKey);
+                if ($model->rate === false) {
+                    $model->rate = StockRequisition::genarateItemRate($model->item, $model->store, $model->batch);
+                    Yii::app()->cache->set($rateCacheKey, $model->rate, 3600);
+                }
                 $model->total = round(($model->quantity * $model->rate), 6);
                 $model->discount = round(($model->total * ((int) Yii::app()->params['discountMedicine'] / 100)), 6);
                 $model->amount = round(($model->total - $model->discount), 6);
@@ -213,6 +218,10 @@ class InvoiceController extends Controller {
         if (isset($_GET['Invoice']))
             $modelGrid->attributes = $_GET['Invoice'];
 
+        $gridData = $modelGrid->search()->getData();
+        $totalDiscount = $modelGrid->getTotalFooter($gridData, 'discount');
+        $totalAmount = $modelGrid->getTotalFooter($gridData, 'amount');
+
         // Uncomment the following line if AJAX validation is needed
         // $this->performAjaxValidation($model);
         if (isset($_POST['InvoiceParent'])) {
@@ -227,8 +236,9 @@ class InvoiceController extends Controller {
             if ($modelParent->save()) {
                 Invoice::model()->updateAll(array('parent' => $modelParent->id), 'parent=0 AND created_by=' . (int) Yii::app()->user->id);
                 $total_amount = Invoice::getTotalAmount($modelParent->id);
-                $patient_category_new = Patient::getData($modelParent->patient, 'category_new');
-                $patient_category = Patient::getData($modelParent->patient, 'category');
+                $patient = Patient::model()->findByPk((int)$modelParent->patient);
+                $patient_category_new = $patient->category_new;
+                $patient_category = $patient->category;
                 InvoiceParent::model()->updateAll(array('total_amount' => $total_amount, 'patient_category_new' => $patient_category_new, 'patient_category' => $patient_category), 'id=' . (int) $modelParent->id);
 
                 Yii::app()->user->setFlash('success', 'Invoice was CREATED successfully.');
@@ -241,6 +251,8 @@ class InvoiceController extends Controller {
             'model' => $model,
             'modelGrid' => $modelGrid,
             'modelParent' => $modelParent,
+            'totalDiscount' => $totalDiscount,
+            'totalAmount' => $totalAmount,
         ));
     }
 
