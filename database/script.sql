@@ -30,4 +30,41 @@ ALTER TABLE os_cache MODIFY COLUMN value LONGBLOB NULL;
 ALTER TABLE os_visitor ADD INDEX idx_server_time (server_time);
 ALTER TABLE os_invoice ADD INDEX idx_parent_created_on (parent, created_on);
 
+# --------------------------------
+-- Data integrity
+ALTER TABLE os_invoice ADD CONSTRAINT fk_invoice_parent
+  FOREIGN KEY (parent) REFERENCES os_invoice_parent(id)
+  ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE os_invoice ADD CONSTRAINT fk_invoice_product
+  FOREIGN KEY (item) REFERENCES os_product(id)
+  ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE os_invoice ADD CONSTRAINT fk_invoice_store
+  FOREIGN KEY (store) REFERENCES os_store(id)
+  ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE os_invoice ADD CONSTRAINT fk_invoice_batch
+  FOREIGN KEY (batch) REFERENCES os_batch(id)
+  ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE os_invoice ADD CONSTRAINT fk_invoice_service
+  FOREIGN KEY (service) REFERENCES os_service(id)
+  ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE os_invoice_parent ADD CONSTRAINT fk_invoice_parent_patient
+  FOREIGN KEY (patient) REFERENCES os_patient(id)
+  ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE os_stock_summary ADD UNIQUE KEY uk_store_item_batch (store, item, batch);
+
+-- Performance indexes
+ALTER TABLE os_invoice ADD INDEX idx_parent_item (parent, item);
+ALTER TABLE os_invoice ADD INDEX idx_parent_servicetype (parent, servicetype);
+ALTER TABLE os_invoice_parent ADD INDEX idx_patient_status (patient, status);
+ALTER TABLE os_patient_prescription ADD INDEX idx_created_on_sex (created_on, sex);
+ALTER TABLE os_user ADD UNIQUE KEY uk_username (username);
+ALTER TABLE os_user ADD UNIQUE KEY uk_email (email);
+ALTER TABLE os_invoice_parent ADD UNIQUE KEY uk_invoice_number (invoice_number);
+
 
