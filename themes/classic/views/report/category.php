@@ -76,12 +76,9 @@ $cs->registerScriptFile(Yii::app()->theme->baseUrl . '/highchart404/modules/expo
                         <?php $this->endWidget(); ?>
                         <?php
                         $array = Report::patientAttendanceAge($start_date, $end_date);
-//                        $totalMalePatients = ($array[0]['AGE_GROUP_1'] + $array[0]['AGE_GROUP_2'] + $array[0]['AGE_GROUP_3'] + $array[0]['AGE_GROUP_4']);
-//                        $totalFemalePatients = ($array[1]['AGE_GROUP_1'] + $array[1]['AGE_GROUP_2'] + $array[1]['AGE_GROUP_3'] + $array[1]['AGE_GROUP_4']);
-//                        $totalPatients = $totalMalePatients + $totalFemalePatients;
-//                        print '<pre>';
-//                        print_r($array);
-//                        print '</pre>';
+                        $male = isset($array[0]) ? $array[0] : array('AGE_GROUP_1' => 0, 'AGE_GROUP_2' => 0, 'AGE_GROUP_3' => 0, 'AGE_GROUP_4' => 0, 'total' => 0);
+                        $female = isset($array[1]) ? $array[1] : array('AGE_GROUP_1' => 0, 'AGE_GROUP_2' => 0, 'AGE_GROUP_3' => 0, 'AGE_GROUP_4' => 0, 'total' => 0);
+                        $totalAll = $male['total'] + $female['total'];
                         ?>
                         <table class="table table-bordered table-striped table-hover">
                             <thead>
@@ -101,43 +98,43 @@ $cs->registerScriptFile(Yii::app()->theme->baseUrl . '/highchart404/modules/expo
                                 <tr>
                                     <td style="text-align:center;">1</td>
                                     <td>0 - 5 Years</td>
-                                    <td style="text-align:center;"><?php echo @$array[0]['AGE_GROUP_1']; ?></td>
-                                    <td style="text-align:center;"><?php echo @$array[1]['AGE_GROUP_1']; ?></td>
-                                    <td style="text-align:center;"><?php echo (@$array[0]['AGE_GROUP_1'] + @$array[1]['AGE_GROUP_1']); ?></td>
-                                    <td style="text-align:center;"><?php echo ROUND(((@$array[0]['AGE_GROUP_1'] + @$array[1]['AGE_GROUP_1']) * 100) / (@$array[0]['total'] + @$array[1]['total']), 2); ?>%</td>
+                                    <td style="text-align:center;"><?php echo $male['AGE_GROUP_1']; ?></td>
+                                    <td style="text-align:center;"><?php echo $female['AGE_GROUP_1']; ?></td>
+                                    <td style="text-align:center;"><?php echo ($male['AGE_GROUP_1'] + $female['AGE_GROUP_1']); ?></td>
+                                    <td style="text-align:center;"><?php echo $totalAll > 0 ? ROUND((($male['AGE_GROUP_1'] + $female['AGE_GROUP_1']) * 100) / $totalAll, 2) : 0; ?>%</td>
                                 </tr>
                                 <tr>
                                     <td style="text-align:center;">2</td>
                                     <td>6 - 14 Years</td>
-                                    <td style="text-align:center;"><?php echo @$array[0]['AGE_GROUP_2']; ?></td>
-                                    <td style="text-align:center;"><?php echo @$array[1]['AGE_GROUP_2']; ?></td>
-                                    <td style="text-align:center;"><?php echo (@$array[0]['AGE_GROUP_2'] + @$array[1]['AGE_GROUP_2']); ?></td>
-                                    <td style="text-align:center;"><?php echo ROUND(((@$array[0]['AGE_GROUP_2'] + @$array[1]['AGE_GROUP_2']) * 100) / (@$array[0]['total'] + @$array[1]['total']), 2); ?>%</td>
+                                    <td style="text-align:center;"><?php echo $male['AGE_GROUP_2']; ?></td>
+                                    <td style="text-align:center;"><?php echo $female['AGE_GROUP_2']; ?></td>
+                                    <td style="text-align:center;"><?php echo ($male['AGE_GROUP_2'] + $female['AGE_GROUP_2']); ?></td>
+                                    <td style="text-align:center;"><?php echo $totalAll > 0 ? ROUND((($male['AGE_GROUP_2'] + $female['AGE_GROUP_2']) * 100) / $totalAll, 2) : 0; ?>%</td>
                                 </tr>
                                 <tr>
                                     <td style="text-align:center;">3</td>
                                     <td>15 - 24 Years</td>
-                                    <td style="text-align:center;"><?php echo @$array[0]['AGE_GROUP_3']; ?></td>
-                                    <td style="text-align:center;"><?php echo @$array[1]['AGE_GROUP_3']; ?></td>
-                                    <td style="text-align:center;"><?php echo (@$array[0]['AGE_GROUP_3'] + @$array[1]['AGE_GROUP_3']); ?></td>
-                                    <td style="text-align:center;"><?php echo ROUND(((@$array[0]['AGE_GROUP_3'] + @$array[1]['AGE_GROUP_3']) * 100) / (@$array[0]['total'] + @$array[1]['total']), 2); ?>%</td>
+                                    <td style="text-align:center;"><?php echo $male['AGE_GROUP_3']; ?></td>
+                                    <td style="text-align:center;"><?php echo $female['AGE_GROUP_3']; ?></td>
+                                    <td style="text-align:center;"><?php echo ($male['AGE_GROUP_3'] + $female['AGE_GROUP_3']); ?></td>
+                                    <td style="text-align:center;"><?php echo $totalAll > 0 ? ROUND((($male['AGE_GROUP_3'] + $female['AGE_GROUP_3']) * 100) / $totalAll, 2) : 0; ?>%</td>
                                 </tr>
                                 <tr>
                                     <td style="text-align:center;">4</td>
                                     <td>Above 25 Years</td>
-                                    <td style="text-align:center;"><?php echo @$array[0]['AGE_GROUP_4']; ?></td>
-                                    <td style="text-align:center;"><?php echo @$array[1]['AGE_GROUP_4']; ?></td>
-                                    <td style="text-align:center;"><?php echo (@$array[0]['AGE_GROUP_4'] + @$array[1]['AGE_GROUP_4']); ?></td>
-                                    <td style="text-align:center;"><?php echo ROUND(((@$array[0]['AGE_GROUP_4'] + @$array[1]['AGE_GROUP_4']) * 100) / (@$array[0]['total'] + @$array[1]['total']), 2); ?>%</td>
+                                    <td style="text-align:center;"><?php echo $male['AGE_GROUP_4']; ?></td>
+                                    <td style="text-align:center;"><?php echo $female['AGE_GROUP_4']; ?></td>
+                                    <td style="text-align:center;"><?php echo ($male['AGE_GROUP_4'] + $female['AGE_GROUP_4']); ?></td>
+                                    <td style="text-align:center;"><?php echo $totalAll > 0 ? ROUND((($male['AGE_GROUP_4'] + $female['AGE_GROUP_4']) * 100) / $totalAll, 2) : 0; ?>%</td>
                                 </tr>
                             </tbody>
                             <tfoot>
                                 <tr>
                                     <th style="text-align:center;"></th>
                                     <th style="text-align:right;">TOTAL: </th>
-                                    <th style="text-align:center;"><?php echo @$array[0]['total']; ?></th>
-                                    <th style="text-align:center;"><?php echo @$array[1]['total']; ?></th>
-                                    <th style="text-align:center;"><?php echo (@$array[0]['total'] + @$array[1]['total']); ?></th>
+                                    <th style="text-align:center;"><?php echo $male['total']; ?></th>
+                                    <th style="text-align:center;"><?php echo $female['total']; ?></th>
+                                    <th style="text-align:center;"><?php echo $totalAll; ?></th>
                                     <th style="text-align:center;">100.00%</th>
                                 </tr>
                             </tfoot>
@@ -182,14 +179,14 @@ $cs->registerScriptFile(Yii::app()->theme->baseUrl . '/highchart404/modules/expo
                                                     type: 'pie',
                                                     name: 'Age',
                                                     data: [
-                                                        ['Male 0 - 5 Years', <?php echo @$array[0]['AGE_GROUP_1']; ?>],
-                                                        ['Female 0 - 5 Years', <?php echo @$array[1]['AGE_GROUP_1']; ?>],
-                                                        ['Male 6 - 14 Years', <?php echo @$array[0]['AGE_GROUP_2']; ?>],
-                                                        ['Female 6 - 14 Years', <?php echo @$array[1]['AGE_GROUP_2']; ?>],
-                                                        ['Male 15 - 24 Years', <?php echo @$array[0]['AGE_GROUP_3']; ?>],
-                                                        ['Female 15 - 24 Years', <?php echo @$array[1]['AGE_GROUP_3']; ?>],
-                                                        ['Male Above 25 Years', <?php echo @$array[0]['AGE_GROUP_4']; ?>],
-                                                        ['Female Above 25 Years', <?php echo @$array[1]['AGE_GROUP_4']; ?>]
+                                                        ['Male 0 - 5 Years', <?php echo $male['AGE_GROUP_1']; ?>],
+                                                        ['Female 0 - 5 Years', <?php echo $female['AGE_GROUP_1']; ?>],
+                                                        ['Male 6 - 14 Years', <?php echo $male['AGE_GROUP_2']; ?>],
+                                                        ['Female 6 - 14 Years', <?php echo $female['AGE_GROUP_2']; ?>],
+                                                        ['Male 15 - 24 Years', <?php echo $male['AGE_GROUP_3']; ?>],
+                                                        ['Female 15 - 24 Years', <?php echo $female['AGE_GROUP_3']; ?>],
+                                                        ['Male Above 25 Years', <?php echo $male['AGE_GROUP_4']; ?>],
+                                                        ['Female Above 25 Years', <?php echo $female['AGE_GROUP_4']; ?>]
                                                     ]
                                                 }]
                                         });
@@ -212,13 +209,12 @@ $cs->registerScriptFile(Yii::app()->theme->baseUrl . '/highchart404/modules/expo
                             <tbody>
                                 <?php
                                 $arraySex = Report::patientAttendanceSex($start_date, $end_date);
-                                $total = count($arraySex);
                                 $total_patient = 0;
                                 $i = 1;
                                 foreach ($arraySex as $key => $value) {
                                     echo '<tr>';
                                     echo '<td style="text-align:center;width:100px;">' . $i . '</td>';
-                                    echo '<td style="text-align:left;">' . $value["sex"] . '</td>';
+                                    echo '<td style="text-align:left;">' . htmlspecialchars($value["sex"]) . '</td>';
                                     echo '<td style="text-align:center;">' . $value["total"] . '</td>';
                                     echo '</tr>';
                                     $total_patient += $value["total"];
@@ -273,10 +269,7 @@ $cs->registerScriptFile(Yii::app()->theme->baseUrl . '/highchart404/modules/expo
                                             series: [{
                                                     type: 'pie',
                                                     name: 'Sex',
-                                                    data: [
-                                                        ['<?php echo @$arraySex[0]['sex']; ?>', <?php echo @$arraySex[0]['total']; ?>],
-                                                        ['<?php echo @$arraySex[1]['sex']; ?>', <?php echo @$arraySex[1]['total']; ?>]
-                                                    ]
+                                                    data: <?php echo json_encode(array_map(function($row){ return array($row['sex'], (int)$row['total']); }, $arraySex)); ?>
                                                 }]
                                         });
                                     });
@@ -288,7 +281,8 @@ $cs->registerScriptFile(Yii::app()->theme->baseUrl . '/highchart404/modules/expo
                     </div>
                     <!-- end widget div -->
                 </div>
-                <!-- end widget -->
+            </div>
+            <!-- end widget -->
         </article>
         <!-- WIDGET END -->
     </div>

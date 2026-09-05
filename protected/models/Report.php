@@ -162,9 +162,22 @@ class Report extends CActiveRecord
     public static function patientAttendanceAge($start_date, $end_date)
     {
         $connection = Yii::app()->db;
-        $command = $connection->createCommand('SELECT PAT.sex, SUM(IF(PAT.age <= 5,1,0)) as "AGE_GROUP_1", SUM(IF(PAT.age BETWEEN 6 and 14,1,0)) as "AGE_GROUP_2", SUM(IF(PAT.age BETWEEN 15 and 24,1,0)) as "AGE_GROUP_3", SUM(IF(PAT.age BETWEEN 25 and 200,1,0)) as "AGE_GROUP_4", COUNT(*) AS total 
-                                               FROM ((SELECT pp.`patient`, pp.`created_on`, p.`age`, p.`sex` FROM {{patient_prescription}} pp LEFT OUTER JOIN {{patient}} p ON p.id=pp.patient) AS PAT)
-                                               WHERE DATE_FORMAT(PAT.`created_on`, "%Y-%m-%d") >= DATE_FORMAT("' . $start_date . '", "%Y-%m-%d") AND DATE_FORMAT(PAT.`created_on`, "%Y-%m-%d") <= DATE_FORMAT("' . $end_date . '", "%Y-%m-%d") GROUP BY PAT.sex');
+        $command = $connection->createCommand('SELECT p.sex, 
+                                                SUM(IF(p.age <= 5,1,0)) as AGE_GROUP_1, 
+                                                SUM(IF(p.age BETWEEN 6 and 14,1,0)) as AGE_GROUP_2, 
+                                                SUM(IF(p.age BETWEEN 15 and 24,1,0)) as AGE_GROUP_3, 
+                                                SUM(IF(p.age BETWEEN 25 and 200,1,0)) as AGE_GROUP_4, 
+                                                COUNT(*) AS total 
+                                                FROM {{patient_prescription}} pp
+                                                INNER JOIN {{patient}} p ON p.id = pp.patient
+                                                WHERE pp.created_on >= :start_date 
+                                                AND pp.created_on <= :end_date 
+                                                GROUP BY p.sex
+                                                ORDER BY p.sex DESC');
+        $start = $start_date . ' 00:00:00';
+        $end = $end_date . ' 23:59:59';
+        $command->bindParam(':start_date', $start);
+        $command->bindParam(':end_date', $end);
         $result = $command->queryAll();
 
         return $result;
@@ -173,10 +186,17 @@ class Report extends CActiveRecord
     public static function patientAttendanceSex($start_date, $end_date)
     {
         $connection = Yii::app()->db;
-        $command = $connection->createCommand('SELECT PAT.sex, COUNT(*) AS total
-                                            FROM ((SELECT `patient`,`created_on`,(SELECT P.`sex` FROM {{patient}} P WHERE patient=P.`id`) AS sex FROM {{patient_prescription}}) AS PAT)
-                                            WHERE DATE_FORMAT(PAT.`created_on`, "%Y-%m-%d") >= DATE_FORMAT("' . $start_date . '", "%Y-%m-%d") AND DATE_FORMAT(PAT.`created_on`, "%Y-%m-%d") <= DATE_FORMAT("' . $end_date . '", "%Y-%m-%d")
-                                            GROUP BY  PAT.sex');
+        $command = $connection->createCommand('SELECT p.sex, COUNT(*) AS total
+                                                FROM {{patient_prescription}} pp
+                                                INNER JOIN {{patient}} p ON p.id = pp.patient
+                                                WHERE pp.created_on >= :start_date 
+                                                AND pp.created_on <= :end_date
+                                                GROUP BY p.sex
+                                                ORDER BY p.sex DESC');
+        $start = $start_date . ' 00:00:00';
+        $end = $end_date . ' 23:59:59';
+        $command->bindParam(':start_date', $start);
+        $command->bindParam(':end_date', $end);
         $result = $command->queryAll();
 
         return $result;

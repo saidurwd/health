@@ -1,7 +1,7 @@
 <?php
 $this->pageTitle = 'Patient Category';
-$start_date = $_REQUEST['start_date'];
-$end_date = $_REQUEST['end_date'];
+$start_date = isset($_REQUEST['start_date']) ? $_REQUEST['start_date'] : date('Y-m-1');
+$end_date = isset($_REQUEST['end_date']) ? $_REQUEST['end_date'] : date('Y-m-t');
 $cs = Yii::app()->getClientScript();
 $cs->registerScriptFile(Yii::app()->theme->baseUrl . '/highchart404/highcharts.js', CClientScript::POS_END);
 $cs->registerScriptFile(Yii::app()->theme->baseUrl . '/highchart404/modules/exporting.js', CClientScript::POS_END);
