@@ -359,6 +359,34 @@ class DashboardController extends Controller {
         $category = isset($_POST['category']) ? $_POST['category'] : 'all';
         $department = isset($_POST['department']) ? $_POST['department'] : 'all';
 
+        // Keep the AJAX request from producing invalid SQL (and, consequently,
+        // a non-JSON error response) when a filter value is malformed.
+        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $startDate)) {
+            $startDate = date('Y-m-01');
+        }
+        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $endDate)) {
+            $endDate = date('Y-m-t');
+        }
+        if (strtotime($startDate) > strtotime($endDate)) {
+            $tmp = $startDate;
+            $startDate = $endDate;
+            $endDate = $tmp;
+        }
+
+        $patientConditions = array(
+            'DATE(created_on) >= ' . $db->quoteValue($startDate),
+            'DATE(created_on) <= ' . $db->quoteValue($endDate),
+        );
+        if ($category !== 'all') {
+            $patientConditions[] = 'category_new = ' . (int) $category;
+        }
+        if ($department !== 'all') {
+            $departmentId = (int) $department;
+            $patientConditions[] = 'category_new IN (SELECT id FROM {{patient_category_new}} WHERE id = '
+                . $departmentId . ' OR parent = ' . $departmentId . ')';
+        }
+        $patientCondition = implode(' AND ', $patientConditions);
+
         $cacheKey = 'DashboardFilter_' . md5($startDate . $endDate . $category . $department);
         $cached = Yii::app()->cache->get($cacheKey);
         if ($cached !== false) {
