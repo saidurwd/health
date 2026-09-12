@@ -17,7 +17,7 @@
  *
  * The followings are the available model relations:
  * @property TransectionStatus $status0
- * @property User $createdBy
+ * @property Users $createdBy
  */
 class InvoiceParent extends CActiveRecord
 {
@@ -56,11 +56,8 @@ class InvoiceParent extends CActiveRecord
 
     public function checkCoutItemsCreate($attribute, $params)
     {
-        $total = Yii::app()->db->createCommand()
-            ->select('COUNT(*)')
-            ->from('{{invoice}}')
-            ->where('parent=0 AND created_by=' . (int) Yii::app()->user->id)
-            ->queryScalar();
+        $array = Invoice::model()->findAll(array('condition' => 'parent=0 AND created_by=' . (int) Yii::app()->user->id));
+        $total = count($array);
 
         if ($total <= 0) {
             $this->addError($attribute, '<i class="fa fa-arrow-up"></i> Please add one or more items to the grid!');
@@ -69,11 +66,8 @@ class InvoiceParent extends CActiveRecord
 
     public function checkCoutItemsUpdate($attribute, $params)
     {
-        $total = Yii::app()->db->createCommand()
-            ->select('COUNT(*)')
-            ->from('{{invoice}}')
-            ->where('parent=' . (int) $this->id)
-            ->queryScalar();
+        $array = Invoice::model()->findAll(array('condition' => 'parent=' . (int) $this->id));
+        $total = count($array);
 
         if ($total <= 0) {
             $this->addError($attribute, '<i class="fa fa-arrow-up"></i> Please add one or more items to the grid!');
@@ -90,10 +84,7 @@ class InvoiceParent extends CActiveRecord
         return array(
             'invoices' => array(self::HAS_MANY, 'Invoice', 'parent'),
             'status0' => array(self::BELONGS_TO, 'TransectionStatus', 'status'),
-            'createdBy' => array(self::BELONGS_TO, 'User', 'created_by'),
-            'patient0' => array(self::BELONGS_TO, 'Patient', 'patient'),
-            'invoiceBy' => array(self::BELONGS_TO, 'User', 'invoice_by'),
-            'itemCount' => array(self::STAT, 'Invoice', 'parent'),
+            'createdBy' => array(self::BELONGS_TO, 'Users', 'created_by'),
         );
     }
 
@@ -134,30 +125,31 @@ class InvoiceParent extends CActiveRecord
      */
     public function search()
     {
-        $criteria = new CDbCriteria;
-        $criteria->with = array('patient0', 'invoiceBy', 'status0');
+        // @todo Please modify the following code to remove attributes that should not be searched.
 
-        $criteria->compare('t.id', $this->id);
-        $criteria->compare('t.patient', $this->patient);
-        $criteria->compare('t.prescription', $this->prescription);
-        $criteria->compare('t.invoice_date', $this->invoice_date, true);
-        $criteria->compare('t.invoice_number', $this->invoice_number, true);
-        $criteria->compare('t.invoice_by', $this->invoice_by);
-        $criteria->compare('t.total_amount', $this->total_amount, true);
-        $criteria->compare('t.patient_category_new', $this->patient_category_new);
-        $criteria->compare('t.patient_category', $this->patient_category);
-        $criteria->compare('t.comments', $this->comments, true);
-        $criteria->compare('t.status', $this->status);
-        $criteria->compare('t.payment_status', $this->payment_status);
-        $criteria->compare('t.created_on', $this->created_on, true);
-        $criteria->compare('t.created_by', $this->created_by);
+        $criteria = new CDbCriteria;
+
+        $criteria->compare('id', $this->id);
+        $criteria->compare('patient', $this->patient);
+        $criteria->compare('prescription', $this->prescription);
+        $criteria->compare('invoice_date', $this->invoice_date, true);
+        $criteria->compare('invoice_number', $this->invoice_number, true);
+        $criteria->compare('invoice_by', $this->invoice_by);
+        $criteria->compare('total_amount', $this->total_amount, true);
+        $criteria->compare('patient_category_new', $this->patient_category_new);
+        $criteria->compare('patient_category', $this->patient_category);
+        $criteria->compare('comments', $this->comments, true);
+        $criteria->compare('status', $this->status);
+        $criteria->compare('payment_status', $this->payment_status);
+        $criteria->compare('created_on', $this->created_on, true);
+        $criteria->compare('created_by', $this->created_by);
 
         return new CActiveDataProvider($this, array(
             'criteria' => $criteria,
             'pagination' => array(
                 'pageSize' => Yii::app()->params['pageSize20'],
             ),
-            'sort' => array('defaultOrder' => 't.invoice_date DESC, t.id DESC')
+            'sort' => array('defaultOrder' => 'invoice_date DESC, id DESC')
         ));
     }
 
@@ -209,19 +201,22 @@ class InvoiceParent extends CActiveRecord
      */
     public static function generateInvoiceNumber()
     {
-        $year = date('Y');
-        $cacheKey = 'InvoiceParent_max_id';
-        $maxId = Yii::app()->cache->get($cacheKey);
-        if ($maxId === false) {
-            $maxId = Yii::app()->db->createCommand()
-                ->select('MAX(id)')
-                ->from('{{invoice_parent}}')
-                ->queryScalar();
-            Yii::app()->cache->set($cacheKey, $maxId, 60);
+        $criteria = new CDbCriteria;
+        $criteria->order = 'created_on DESC';
+        $model = InvoiceParent::model()->find($criteria);
+        if (empty($model->invoice_number)) {
+            $autoValue = 1;
+        } else {
+            $ex = explode('-', $model->invoice_number);
+            $max = $ex[2];
+            if ($ex[1] == date('Y')) {
+                $autoValue = ((int) $max + 1);
+            } else {
+                $autoValue = 1;
+            }
         }
-        $autoValue = $maxId ? ((int) $maxId + 1) : 1;
 
-        $return = 'INV#' . strtoupper(Yii::app()->user->name) . '-' . $year . '-' . $autoValue;
+        $return = 'INV#' . strtoupper(Yii::app()->user->name) . '-' . date('Y') . '-' . $autoValue;
         return $return;
     }
 
