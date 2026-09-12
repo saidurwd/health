@@ -1,9 +1,11 @@
 <?php
-$invoiceParent = InvoiceParent::model()->findByPk((int)@$_REQUEST['id']);
+/* @var $this InvoiceController */
+/* @var $model Invoice */
+
 $this->pageTitle = 'Edit Invoice';
 $this->breadcrumbs = array(
     'Invoices' => array('admin'),
-    $invoiceParent->invoice_number => array('view', 'id' => @$_REQUEST['id']),
+    InvoiceParent::getData(@$_REQUEST['id'], "invoice_number") => array('view', 'id' => @$_REQUEST['id']),
     'Update',
 );
 Yii::app()->clientScript->registerScript('reload-script', "
@@ -22,7 +24,7 @@ Yii::app()->clientScript->registerScript('chained', '
         <h1 class="page-title txt-color-blueDark">
             <i class="fa fa-shopping-cart fa-fw "></i> 
             Invoices
-            <span>
+            <span>>
                 Edit Invoice
             </span>
         </h1>
@@ -43,7 +45,7 @@ Yii::app()->clientScript->registerScript('chained', '
             <div class="jarviswidget" id="wid-id-0" data-widget-editbutton="false" data-widget-colorbutton="false">
                 <header>
                     <span class="widget-icon"> <i class="fa fa-home"></i> </span>
-                    <h2><strong>Invoice#: </strong><?php echo $invoiceParent->invoice_number; ?>, <strong>Invoice Date: </strong><?php echo User::get_date_time($invoiceParent->invoice_date); ?>, <strong>Invoice By: </strong><?php echo User::get_full_name($invoiceParent->invoice_by); ?></h2>
+                    <h2><strong>Invoice#: </strong><?php echo InvoiceParent::getData(@$_REQUEST['id'], "invoice_number"); ?>, <strong>Invoice Date: </strong><?php echo User::get_date_time(InvoiceParent::getData(@$_REQUEST['id'], "invoice_date")); ?>, <strong>Invoice By: </strong><?php echo User::get_full_name(InvoiceParent::getData(@$_REQUEST['id'], "invoice_by")); ?></h2>
                 </header>
                 <!-- widget div-->
                 <div>
@@ -69,19 +71,20 @@ Yii::app()->clientScript->registerScript('chained', '
                                 array(
                                     'header' => 'Product/Service',
                                     'name' => 'item',
-                                    'value' => '(empty($data->item0) ? "N/A" : $data->item0->title).(empty($data->service0) ? "" : $data->service0->title)',
+                                    'value' => 'Product::getItemName($data->item).Service::getData($data->service,"title")',
                                     'htmlOptions' => array('style' => "text-align:left;"),
                                     'footer' => 'TOTAL',
                                     'footerHtmlOptions' => array('class' => 'text-left text-bold-cus'),
                                 ),
                                 array(
                                     'name' => 'store',
-                                    'value' => '(empty($data->store0) ? "N/A" : $data->store0->title)',
+                                    'value' => 'Store::get_store($data->store)',
                                     'htmlOptions' => array('style' => "text-align:left;"),
                                 ),
                                 array(
                                     'name' => 'batch',
-                                    'value' => '(empty($data->batch0) ? "N/A" : $data->batch0->title)',
+                                    //'value' => 'Batch::getBatch($data->batch)',
+                                    'value' => 'Batch::getData($data->batch,"title")',
                                     'htmlOptions' => array('style' => "text-align:left;"),
                                 ),
                                 array(
@@ -93,7 +96,7 @@ Yii::app()->clientScript->registerScript('chained', '
                                 array(
                                     'header' => 'Unit',
                                     'type' => 'raw',
-                                    'value' => '(empty($data->item0) || empty($data->item0->unit0) ? "N/A" : $data->item0->unit0->formal_name)',
+                                    'value' => 'Product::getItemUOM($data->item)',
                                     'htmlOptions' => array('class' => "text-center width-100"),
                                 ),
                                 array(
@@ -105,14 +108,14 @@ Yii::app()->clientScript->registerScript('chained', '
                                     'name' => 'discount',
                                     'value' => 'Product::number_format_currency($data->discount,2,Yii::app()->session->get(\'currency\'))',
                                     'htmlOptions' => array('style' => "text-align:right;width:100px;"),
-                                    'footer' => Invoice::getTotalDiscount(@$_REQUEST['id']),
+                                    'footer' => $model->getTotalFooter($model->searchInvoice(@$_REQUEST['id'])->getData(), 'discount'),
                                     'footerHtmlOptions' => array('class' => 'text-right text-bold-cus'),
                                 ),
                                 array(
                                     'name' => 'amount',
                                     'value' => 'Product::number_format_currency($data->amount,2,Yii::app()->session->get(\'currency\'))',
                                     'htmlOptions' => array('style' => "text-align:right;width:150px;"),
-                                    'footer' => Invoice::getTotalAmount(@$_REQUEST['id']),
+                                    'footer' => $model->getTotalFooter($model->searchInvoice(@$_REQUEST['id'])->getData(), 'amount'),
                                     'footerHtmlOptions' => array('class' => 'text-right text-bold-cus'),
                                 ),
                                 array(

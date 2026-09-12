@@ -143,15 +143,7 @@ $formParent = $this->beginWidget('CActiveForm', array(
         </section>
         <section class="col col-2">
             <label class="select">
-                <?php
-                $cacheKey = 'PatientList_dropdown';
-                $patientList = Yii::app()->cache->get($cacheKey);
-                if ($patientList === false) {
-                    $patientList = CHtml::listData(Patient::model()->findAll(array('select' => 'id, CONCAT(name," [",pat_id,"]") AS name', 'condition' => '', 'order' => 'id DESC')), 'id', 'name');
-                    Yii::app()->cache->set($cacheKey, $patientList, 600);
-                }
-                echo $formParent->dropDownList($modelParent, 'patient', $patientList, array('empty' => 'Select a Patient', 'class' => 'select2'));
-                ?>
+                <?php echo $formParent->dropDownList($modelParent, 'patient', CHtml::listData(Patient::model()->findAll(array('select' => 'id, CONCAT(name," [",pat_id,"]") AS name', 'condition' => '', 'order' => 'id DESC')), 'id', 'name'), array('empty' => 'Select a Patient', 'class' => 'select2')); ?>
                 <?php echo $formParent->error($modelParent, 'patient'); ?>
             </label>
         </section>
@@ -261,6 +253,7 @@ $formParent = $this->beginWidget('CActiveForm', array(
                 url: "<?php print $this->createUrl('invoice/adjustment'); ?>",
                 data: "id=" + id + "&adjustment=" + adjustment + "&type=" + type,
                 cache: false,
+                async: false,
                 success: function (result) {
                     $('#invoice-grid').yiiGridView('update');
                 },
